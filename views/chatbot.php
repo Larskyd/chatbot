@@ -1,8 +1,3 @@
-<html>
-<head>
-    <title>Chatbot</title>
-</head>
-<body>
     <!--- Inklusjon av header --->
     <?php include 'header.php'; ?>
     <!--- Knapp for å vise frem kategorier --->
@@ -12,11 +7,9 @@
         </button>
     </form>
     <!--- Vis svar fra knappen --->
-        <?php if (!empty($allCategories)): ?>
-            <p>Tilgjengelige kategorier: <?php echo implode(", ", array_map('htmlspecialchars', $allCategories)); ?></p>
-        <?php endif; ?>
+    <?php if (!empty($allCategories)): ?>
+        <p>Tilgjengelige kategorier: <?php echo implode(", ", array_map('htmlspecialchars', $allCategories)); ?></p>
+    <?php endif; ?>
 
     <!--- Inklusjon av footer --->
     <?php include 'footer.php'; ?>
-</body>
-</html>
