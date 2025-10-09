@@ -15,6 +15,6 @@
     </style>
 </head>
 <body>
-    <div class="overskrift" style="background-color:#f7f7f7; padding:20px; text-align:center; color:white;">
+    <div class="overskrift" style="background-color:#f7f7f7; padding:20px; text-align:center; color:#222;">
         <h1>Mat-chatbot</h1>
     </div>
