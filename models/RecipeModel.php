@@ -17,23 +17,26 @@ class RecipeModel
         return [];
     }
 
-    // Hente oppskrifter basert på land 
-    public function getRecipesByArea()
+    // Hent oppskrifter basert på område (land)
+    public function getRecipesByArea($area)
     {
-        $url = "https://www.themealdb.com/api/json/v1/1/filter.php?a=Canadian";
+        // Bygg URL dynamisk basert på området
+        $url = "https://www.themealdb.com/api/json/v1/1/filter.php?a=" . urlencode($area);
         $json = file_get_contents($url);
         if ($json === false) return [];
         $data = json_decode($json, true);
 
-        //returner array av oppskrifter fra ulike land
-        if (!empty($data['land'])) {
-            return array_map(function($area) {
-                return $area['strArea'];
-            }, $data['land']);
+        // Returner array av oppskrifter
+        if (!empty($data['meals'])) {
+            return array_map(function($meal) {
+                return [
+                    'id' => $meal['idMeal'],
+                    'name' => $meal['strMeal'],
+                    'thumbnail' => $meal['strMealThumb']
+                ];
+            }, $data['meals']);
         }
         return [];
     }
 }
-
-
 ?>
