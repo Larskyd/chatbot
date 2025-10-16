@@ -1,0 +1,32 @@
+body {
+    font-family: system-ui, sans-serif;
+    background: #f8f9fa;
+    color: #222;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+}
+
+.btn {
+    background-color: #2a7ae2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.footer {
+    background: #eee;
+    text-align: center;
+    padding: 20px;
+    margin-top: auto;
+}
