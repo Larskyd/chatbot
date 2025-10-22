@@ -1,8 +1,22 @@
 <?php
 require_once __DIR__ . '/../models/RecipeModel.php';
 
-// Kontroller for chatbot-funksjonalitet
+/**
+ * ChatbotController
+ *
+ * Håndterer innkommende forespørsler fra frontend og leverer 
+ * data til viewet.
+ */
 class ChatbotController {
+    /**
+     * Behandler request og render view eller returnerer data.
+     *
+     * Forventede POST-felter:
+     * - showCategories (on/true)  => returnerer alle kategorier
+     * - showRecipesByArea (on/true) + area => returnerer oppskrifter for område
+     *
+     * @return void
+     */
     public function handleRequest() {
         $allCategories = [];
         $recipesByArea = [];
@@ -19,6 +33,7 @@ class ChatbotController {
             $recipesByArea = $model->getRecipesByArea($area);
         }
 
+        // Render view (passer data via variabler)
         include __DIR__ . '/../views/chatbot.php';
     }
 }

@@ -1,7 +1,11 @@
 <?php
 class RecipeModel
 {
-    // Hent alle kategorier fra TheMealDB API
+    /**
+     * Hent alle kategorinavn.
+     *
+     * @return string[] Array av kategorinavn, tom array ved feil eller ingen data.
+     */
     public function getAllCategories()
     {
         $url = "https://www.themealdb.com/api/json/v1/1/categories.php";
@@ -17,7 +21,12 @@ class RecipeModel
         return [];
     }
 
-    // Hent oppskrifter basert på område (land)
+    /**
+     * Hent oppskrifter basert på område (land).
+     *
+     * @param string $area Navn på område (f.eks. "Italian")
+     * @return array[] Array av oppskrifter med keys: id, name, thumbnail
+     */
     public function getRecipesByArea($area)
     {
         // Bygg URL dynamisk basert på området
