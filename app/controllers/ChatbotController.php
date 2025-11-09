@@ -1,68 +1,49 @@
 <?php
 require_once __DIR__ . '/../models/RecipeModel.php';
+require_once __DIR__ . '/../models/QueryLogModel.php';
 
-/**
- * ChatbotController
- *
- * Håndterer innkommende forespørsler fra frontend og leverer data til viewet.
- */
-class ChatbotController {
-    public function handleRequest() {
+class ChatbotController
+{
+    protected RecipeModel $recipeModel;
+    protected QueryLogModel $logModel;
+
+    
+    public function __construct($db)
+    {
+        $this->recipeModel = new RecipeModel($db);
+        $this->logModel = new QueryLogModel($db); 
+    }
+
+    /**
+     * Håndter request, sett opp variabler for viewet
+     */
+    public function handleRequest(): void
+    {
+        // defaults
         $allCategories = [];
         $recipesByArea = [];
-        $model = new RecipeModel();
+        $area = '';
 
-        // Prøv initialisere DB logger hvis database er tilgjengelig
-        $logger = null;
-        try {
-            if (file_exists(__DIR__ . '/../config.php') &&
-                file_exists(__DIR__ . '/../lib/Database.php') &&
-                file_exists(__DIR__ . '/../models/QueryLogModel.php')) {
-
-                require_once __DIR__ . '/../config.php';
-                require_once __DIR__ . '/../lib/Database.php';
-                require_once __DIR__ . '/../models/QueryLogModel.php';
-
-                $cfg = require __DIR__ . '/../config.php';
-                $db = new Database($cfg);
-                $logger = new QueryLogModel($db);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!empty($_POST['showCategories'])) {
+                $allCategories = $this->recipeModel->getAllCategories() ?? [];
             }
-        } catch (\Throwable $e) {
-            // Hvis logger ikke fungerer, fortsett uten logging
-            $logger = null;
-        }
 
-        // Håndter forespørsel om kategorier
-        if (isset($_POST['showCategories'])) {
-            $allCategories = $model->getAllCategories();
+            if (!empty($_POST['showRecipesByArea'])) {
+                $area = trim((string)($_POST['area'] ?? ''));
+                if ($area !== '') {
+                    $recipesByArea = $this->recipeModel->getRecipesByArea($area) ?? [];
 
-            // Logg forespørselen hvis logger er tilgjengelig
-            if ($logger) {
-                try {
-                    $logger->insertLog(null, 'showCategories', json_encode(['count' => count($allCategories)]));
-                } catch (\Throwable $e) {
-                    // Ignorer logging-feil
+                    // logg søket — juster userId hvis du har autentisering
+                    $userId = $_SESSION['user_id'] ?? null;
+                    $responseText = json_encode(array_map(fn($r)=>($r['title'] ?? ''), $recipesByArea), JSON_UNESCAPED_UNICODE);
+                    $metadata = ['count' => count($recipesByArea)];
+                    $this->logModel->insertLog($userId, $area, $responseText, $metadata);
                 }
             }
         }
 
-        // Håndter forespørsel om oppskrifter basert på område
-        if (isset($_POST['showRecipesByArea']) && !empty($_POST['area'])) {
-            $area = $_POST['area'];
-            $recipesByArea = $model->getRecipesByArea($area);
-
-            // Logg forespørselen hvis logger er tilgjengelig
-            if ($logger) {
-                try {
-                    $logger->insertLog(null, 'showRecipesByArea: ' . $area, json_encode(['count' => count($recipesByArea)]));
-                } catch (\Throwable $e) {
-                    // Ignorer logging-feil
-                }
-            }
-        }
-
-        // Render view
+        // gjør variablene tilgjengelige for view
         include __DIR__ . '/../views/chatbot.php';
     }
 }
-?>
