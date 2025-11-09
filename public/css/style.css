@@ -1,14 +1,35 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
 body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
     font-family: system-ui, sans-serif;
     background: #f8f9fa;
     color: #222;
-    margin: 0;
-    padding: 20px;
 }
 
 .container {
     max-width: 800px;
     margin: auto;
+    flex: 1 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+.header {
+    background: #2a7ae2;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.tittel {
+    background-color: #e3e3e3;
+    padding: 20px;
+    text-align: center;
+    color: #222;
 }
 
 .btn {
@@ -26,7 +47,7 @@ body {
 
 .footer {
     background: #eee;
-    text-align: center;
+    text-align: center; 
     padding: 20px;
-    margin-top: auto;
+    margin-top: auto; 
 }
