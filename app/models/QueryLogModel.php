@@ -55,7 +55,7 @@ class QueryLogModel
      * @param int $limit
      * @return array
      */
-    public function getRecent(int $limit = 50): array
+    public function getRecent(int $limit = 5): array
     {
         $limit = (int) $limit;
         $sql = "SELECT * FROM query_log ORDER BY created_at DESC LIMIT {$limit}";

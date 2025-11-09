@@ -7,9 +7,14 @@
     <link rel="stylesheet" href="<?php echo htmlspecialchars(BASE_URL); ?>/css/style.css">
 </head>
 <body>
-    <div class="header">
-        <div class="tittel">
-            <h1>Mat-chatbot</h1>
-        </div>
-        <a href="<?php echo htmlspecialchars(BASE_URL); ?>/?page=login">Logg inn</a>
+<header class="header">
+    <div class="tittel">
+        <h1><a href="<?php echo htmlspecialchars(BASE_URL); ?>/?page=chatbot">Mat-chatbot</a></h1>
     </div>
+
+    <nav class="right-links" aria-label="Hovedlenker">
+        <a href="<?php echo htmlspecialchars(BASE_URL); ?>/?page=login">Logg inn</a>
+        <a href="<?php echo htmlspecialchars(BASE_URL); ?>/?page=register">Registrer</a>
+        <a href="<?php echo htmlspecialchars(BASE_URL); ?>/?page=history">Historikk</a>
+    </nav>
+</header>

@@ -14,19 +14,46 @@ body {
 .container {
     flex: 1;
     padding: 20px;
+    align-items: center;
+    justify-content: center;
 }
 .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* tittel venstre, lenker høyre */
     background: #2a7ae2;
     color: white;
-    padding: 20px;
-    text-align: center;
+    padding: 16px 20px;
 }
 
+/* tittel på venstre side */
 .tittel {
-    background-color: #e3e3e3;
-    padding: 20px;
-    text-align: center;
-    color: #222;
+    background: transparent; /* fjern grå boks */
+    padding: 0;
+    margin: 0;
+}
+.tittel h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #fff;
+}
+
+/* lenkene på høyre side, stablet vertikalt */
+.right-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end; /* høyrestilte lenker */
+}
+
+.right-links a {
+    color: #fff;
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+.right-links a:hover {
+    background: rgba(255,255,255,0.08);
 }
 
 .btn {
