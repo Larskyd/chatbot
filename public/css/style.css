@@ -12,11 +12,8 @@ body {
 }
 
 .container {
-    max-width: 800px;
-    margin: auto;
-    flex: 1 0 auto;
-    padding-left: 20px;
-    padding-right: 20px;
+    flex: 1;
+    padding: 20px;
 }
 .header {
     background: #2a7ae2;
@@ -43,6 +40,16 @@ body {
 
 .btn:hover {
     opacity: 0.9;
+}
+
+.login-container {
+    max-width: auto;
+    margin: 50px auto;
+    padding: 20px;
+    background: rgb(255, 255, 255);
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .footer {
