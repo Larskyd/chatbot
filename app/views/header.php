@@ -7,11 +7,16 @@
     <!-- Dynamisk generering av sti til CSS-fil -->
     <link rel="stylesheet" href="<?php echo htmlspecialchars(BASE_URL); ?>/css/style.css">
 </head>
-<?php error_log('SESSION: '.print_r($_SESSION, true)); ?>
+<?php error_log('SESSION: ' . print_r($_SESSION, true)); ?>
+
 <body>
     <header class="header">
         <div class="tittel">
-            <h1><a href="<?php echo htmlspecialchars(BASE_URL); ?>/?page=chatbot">Mat-chatbot</a></h1>
+            <?php if (!empty($_SESSION['user_email'])): ?>
+                <h1><a href="<?php echo htmlspecialchars(BASE_URL); ?>/?page=chatbot">Mat-chatbot</a></h1>
+            <?php else: ?>
+                <h1>Mat-chatbot</h1>
+            <?php endif; ?>
         </div>
 
         <nav class="right-links" aria-label="Hovedlenker">

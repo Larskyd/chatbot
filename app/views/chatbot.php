@@ -2,6 +2,13 @@
 
 <h1>Oppskrift Chatbot</h1>
 
+<?php $currentUser = $currentUser ?? $_SESSION['user_email'] ?? null; ?>
+
+<!-- Velkomstmelding hvis bruker er logget inn -->
+<?php if ($currentUser): ?>
+  <p class="page-greeting">Velkommen tilbake, <?php echo htmlspecialchars($currentUser); ?>!</p>
+<?php endif; ?>
+
 <!-- Kategori visnings knapp -->
 <form method="post" style="margin-top:20px;">
   <button type="submit" name="showCategories" value="1" id="showCategories">Se alle kategorier</button>
@@ -28,8 +35,8 @@
     <?php foreach ($recipesByArea as $recipe): ?>
       <div style="border:1px solid #ccc; padding:10px; width:200px;">
         <img src="<?php echo htmlspecialchars($recipe['thumbnail']); ?>"
-             alt="<?php echo htmlspecialchars($recipe['name']); ?>"
-             style="width:100%;">
+          alt="<?php echo htmlspecialchars($recipe['name']); ?>"
+          style="width:100%;">
         <h3><?php echo htmlspecialchars($recipe['name']); ?></h3>
       </div>
     <?php endforeach; ?>

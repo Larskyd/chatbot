@@ -2,15 +2,23 @@
 
 <div class="container">
 
+    <!-- Flash-melding for feil hvis bruker ikke er logget inn -->
+    <?php if (!empty($_SESSION['flash_error'])): ?>
+        <div style="color:red;"><?php echo htmlspecialchars($_SESSION['flash_error']); ?></div>
+        <?php unset($_SESSION['flash_error']); ?>
+    <?php endif; ?>
+
+    <!-- Melding for vellykket innlogging -->
     <?php if (!empty($_GET['loggedin'])): ?>
         <p style="color:green;">Du er logget inn.</p>
     <?php endif; ?>
 
+    <!-- Melding for vellykket utlogging -->
     <?php if (!empty($_GET['loggedout'])): ?>
-        <p style="color:green;">Du er logget ut.</p>
+        <p style="color:green;">Du har nå logget ut.</p>
     <?php endif; ?>
 
-
+    <!-- Vis feil ved innlogging hvis noen -->
     <?php if (!empty($errors) && is_array($errors)): ?>
         <ul style="color:red;">
             <?php foreach ($errors as $e): ?>

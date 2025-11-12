@@ -1,16 +1,17 @@
-
 <?php include __DIR__ . '/header.php'; ?>
 
 <h2>Historikk</h2>
 
 <?php
 // Hjelpefunksjon for sikker escaping
-function e($value): string {
+function e($value): string
+{
     return htmlspecialchars((string)($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
 // Formatér metadata (JSON) for visning
-function format_metadata($meta): string {
+function format_metadata($meta): string
+{
     if ($meta === null || $meta === '') {
         return '';
     }

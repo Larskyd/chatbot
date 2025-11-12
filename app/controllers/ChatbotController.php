@@ -15,15 +15,22 @@ class ChatbotController
     }
 
     /**
+     * Sørg for at session er startet.
+     */
+    private function ensureSessionStarted(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+    }
+
+    /**
      * Helperfunksjon
      * Hent ID for nåværende bruker fra session.
      */
     private function getCurrentUserId(): ?int
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            // session startes vanligvis i public/index.php, men safe fallback:
-            session_start();
-        }
+        $this->ensureSessionStarted();
         return isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
     }
 
@@ -32,7 +39,17 @@ class ChatbotController
      */
     public function handleRequest(): void
     {
-        // defaults
+        $this->ensureSessionStarted();
+
+        // Auth-guard: redirect to login hvis ikke innlogget
+        $userId = $this->getCurrentUserId();
+        if ($userId === null) {
+            // sett flash-melding og redirect til login
+            $_SESSION['flash_error'] = 'Du må være logget inn for å se denne siden.';
+            header('Location: ' . (defined('BASE_URL') ? BASE_URL : '') . '/?page=login');
+            exit;
+        }
+
         $allCategories = [];
         $recipesByArea = [];
         $area = '';
@@ -47,11 +64,8 @@ class ChatbotController
                 if ($area !== '') {
                     $recipesByArea = $this->recipeModel->getRecipesByArea($area) ?? [];
 
-                    // Hent user id fra helperfunksjon og logg søket
-                    $userId = $this->getCurrentUserId(); // kan være null for anonym
                     $responseText = json_encode(array_map(fn($r) => ($r['title'] ?? ''), $recipesByArea), JSON_UNESCAPED_UNICODE);
                     $metadata = ['count' => count($recipesByArea)];
-
                     $this->logModel->insertLog($userId, $area, $responseText, $metadata);
                 }
             }

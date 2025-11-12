@@ -75,13 +75,13 @@ class AuthController
 
         $email = trim($email);
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Ugyldig e‑postadresse.';
+            $errors[] = 'Ugyldig e-postadresse.';
             return ['success' => false, 'errors' => $errors];
         }
 
         $user = $this->userModel->findByEmail($email);
         if (!$user || !password_verify($password, $user['password'])) {
-            $errors[] = 'Feil e‑post eller passord.';
+            $errors[] = 'Feil e-post eller passord.';
             return ['success' => false, 'errors' => $errors];
         }
 

@@ -1,11 +1,11 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 // START SESSION (før noe output)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 // BASE_URL auto (peker til /.../public)
 $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
