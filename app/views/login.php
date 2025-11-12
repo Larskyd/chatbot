@@ -6,6 +6,11 @@
         <p style="color:green;">Du er logget inn.</p>
     <?php endif; ?>
 
+    <?php if (!empty($_GET['loggedout'])): ?>
+        <p style="color:green;">Du er logget ut.</p>
+    <?php endif; ?>
+
+
     <?php if (!empty($errors) && is_array($errors)): ?>
         <ul style="color:red;">
             <?php foreach ($errors as $e): ?>
@@ -28,7 +33,7 @@
             <button type="submit" class="btn">Logg inn</button>
         </form>
     </div>
-    
+
 </div>
 
 <?php include __DIR__ . '/footer.php'; ?>

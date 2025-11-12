@@ -2,6 +2,11 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// START SESSION (før noe output)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // BASE_URL auto (peker til /.../public)
 $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
 define('BASE_URL', $scriptDir);
@@ -18,6 +23,13 @@ $auth = new AuthController($userModel);
 
 // enkel routing: ?page=login (default)
 $page = $_GET['page'] ?? 'login';
+
+// Håndtering av logout
+if ($page === 'logout') {
+    $auth->logout();
+    header('Location: ' . BASE_URL . '/?page=login&loggedout=1');
+    exit;
+}
 
 // POST: håndter registrering eller login basert på page
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

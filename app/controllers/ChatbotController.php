@@ -7,11 +7,24 @@ class ChatbotController
     protected RecipeModel $recipeModel;
     protected QueryLogModel $logModel;
 
-    
+
     public function __construct($db)
     {
         $this->recipeModel = new RecipeModel($db);
-        $this->logModel = new QueryLogModel($db); 
+        $this->logModel = new QueryLogModel($db);
+    }
+
+    /**
+     * Helperfunksjon
+     * Hent ID for nåværende bruker fra session.
+     */
+    private function getCurrentUserId(): ?int
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            // session startes vanligvis i public/index.php, men safe fallback:
+            session_start();
+        }
+        return isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
     }
 
     /**
@@ -34,10 +47,11 @@ class ChatbotController
                 if ($area !== '') {
                     $recipesByArea = $this->recipeModel->getRecipesByArea($area) ?? [];
 
-                    // logg søket — juster userId hvis du har autentisering
-                    $userId = $_SESSION['user_id'] ?? null;
-                    $responseText = json_encode(array_map(fn($r)=>($r['title'] ?? ''), $recipesByArea), JSON_UNESCAPED_UNICODE);
+                    // Hent user id fra helperfunksjon og logg søket
+                    $userId = $this->getCurrentUserId(); // kan være null for anonym
+                    $responseText = json_encode(array_map(fn($r) => ($r['title'] ?? ''), $recipesByArea), JSON_UNESCAPED_UNICODE);
                     $metadata = ['count' => count($recipesByArea)];
+
                     $this->logModel->insertLog($userId, $area, $responseText, $metadata);
                 }
             }
