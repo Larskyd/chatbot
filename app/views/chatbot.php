@@ -23,6 +23,26 @@
     </p>
   <?php endif; ?>
 
+    <!-- Tilfeldig matrett knapp -->
+  <form method="post" style="margin-top:20px;">
+    <button type="submit" name="randomMeal" value="1" id="randomMeal">Få en tilfeldig matrett</button>
+  </form>
+
+  <!-- Vis tilfeldig matrett hvis tilgjengelig -->
+  <?php if (!empty($randomMeal)): ?>
+    <div style="border:1px solid #ccc; padding:10px; width:300px; margin-top:20px;">
+      <h2><?php echo htmlspecialchars($randomMeal['name']); ?></h2>
+      <img src="<?php echo htmlspecialchars($randomMeal['thumbnail']); ?>"
+        alt="<?php echo htmlspecialchars($randomMeal['name']); ?>"
+        style="width:100%;">
+      <p><strong>Kategori:</strong> <?php echo htmlspecialchars($randomMeal['category']); ?></p>
+      <p><strong>Område:</strong> <?php echo htmlspecialchars($randomMeal['area']); ?></p>
+      <p><strong>Instruksjoner:</strong></p>
+      <p><?php echo nl2br(htmlspecialchars($randomMeal['instructions'])); ?></p>
+    </div>
+  <?php endif; ?>
+
+
   <!-- Område basert oppskriftssøk -->
   <form method="post" style="margin-top:20px;">
     <label for="area">Skriv inn et område (land):</label>
