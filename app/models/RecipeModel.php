@@ -14,11 +14,35 @@ class RecipeModel
         $data = json_decode($json, true);
         // Returner array av kategorinavn
         if (!empty($data['categories'])) {
-            return array_map(function($cat) {
+            return array_map(function ($cat) {
                 return $cat['strCategory'];
             }, $data['categories']);
         }
         return [];
+    }
+
+    /**
+     * Hent en tilfeldig matrett.
+     *
+     * @return array|null Array med matrettdata eller null ved feil
+     */
+    public function getRandomMeal()
+    {
+        $url = "https://www.themealdb.com/api/json/v1/1/random.php";
+        $json = file_get_contents($url);
+        if ($json === false) return null;
+        $data = json_decode($json, true);
+        if (!empty($data['meals'][0])) {
+            $meal = $data['meals'][0];
+            return [
+                'name' => $meal['strMeal'],
+                'thumbnail' => $meal['strMealThumb'],
+                'category' => $meal['strCategory'],
+                'area' => $meal['strArea'],
+                'instructions' => $meal['strInstructions']
+            ];
+        }
+        return null;
     }
 
     /**
@@ -37,7 +61,7 @@ class RecipeModel
 
         // Returner array av oppskrifter
         if (!empty($data['meals'])) {
-            return array_map(function($meal) {
+            return array_map(function ($meal) {
                 return [
                     'id' => $meal['idMeal'],
                     'name' => $meal['strMeal'],
@@ -48,4 +72,3 @@ class RecipeModel
         return [];
     }
 }
-?>

@@ -52,6 +52,7 @@ class ChatbotController
 
         $allCategories = [];
         $recipesByArea = [];
+        $randomMeal = null;
         $area = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -68,6 +69,10 @@ class ChatbotController
                     $metadata = ['count' => count($recipesByArea)];
                     $this->logModel->insertLog($userId, $area, $responseText, $metadata);
                 }
+            }
+
+            if (!empty($_POST['randomMeal'])) {
+                $randomMeal = $this->recipeModel->getRandomMeal();
             }
         }
 
