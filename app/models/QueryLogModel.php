@@ -3,7 +3,10 @@
  * QueryLogModel
  * Logger chatbot-spørringer til query_log tabellen.
  *
- * Forventet DB: tabellen query_log 
+ * Funksjonalitet:
+ * - insertLog($userId, $queryText, $responseText, $metadata): logg en spørring
+ * - getByUserId($userId, $limit): hent siste N spørringer for en bruker
+ * - getRecent($limit): hent siste N spørringer totalt
  */
 class QueryLogModel
 {
@@ -50,12 +53,42 @@ class QueryLogModel
     }
 
     /**
+     * Hent siste N logs for en gitt bruker. Returnerer tom array hvis userId er null.
+     *
+     * @param int|null $userId
+     * @param int $limit
+     * @return array
+     */
+    public function getByUserId(?int $userId, int $limit = 100): array
+    {
+        if ($userId === null) {
+            return [];
+        }
+
+        try {
+            $sql = "SELECT id, user_id, query_text, response_text, metadata, created_at
+                    FROM query_log
+                    WHERE user_id = :user_id
+                    ORDER BY created_at DESC
+                    LIMIT :limit";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+            $stmt->bindValue(':limit', max(1, (int)$limit), \PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) {
+            error_log('QueryLog getByUserId error: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Hent siste N logs.
      *
      * @param int $limit
      * @return array
      */
-    public function getRecent(int $limit = 50): array
+    public function getRecent(int $limit = 5): array
     {
         $limit = (int) $limit;
         $sql = "SELECT * FROM query_log ORDER BY created_at DESC LIMIT {$limit}";

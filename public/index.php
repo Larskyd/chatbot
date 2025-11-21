@@ -1,4 +1,9 @@
 <?php
+// START SESSION (før noe output)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -19,11 +24,16 @@ $auth = new AuthController($userModel);
 // enkel routing: ?page=login (default)
 $page = $_GET['page'] ?? 'login';
 
-// POST: håndter login eller registrering
-// Hvis suksessfull, redirect til chatbot siden
-if ($page === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? 'login';
-    if ($action === 'register') {
+// Håndtering av logout
+if ($page === 'logout') {
+    $auth->logout();
+    header('Location: ' . BASE_URL . '/?page=login&loggedout=1');
+    exit;
+}
+
+// POST: håndter registrering eller login basert på page
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($page === 'register') {
         $email = $_POST['email'] ?? '';
         $password = $_POST['password'] ?? '';
         $res = $auth->register($email, $password);
@@ -32,10 +42,12 @@ if ($page === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } else {
             $errors = $res['errors'];
-            require __DIR__ . '/../app/views/login.php';
+            require __DIR__ . '/../app/views/register.php';
             exit;
         }
-    } else { // login
+    }
+
+    if ($page === 'login') {
         $email = $_POST['email'] ?? '';
         $password = $_POST['password'] ?? '';
         $res = $auth->login($email, $password);
@@ -50,15 +62,21 @@ if ($page === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// GET: vis view
-// vis chatbot eller login basert på page
-$page = $_GET['page'] ?? 'login';
-
+// GET: vis riktig view eller chatbot via controller
 if ($page === 'chatbot') {
     require_once __DIR__ . '/../app/controllers/ChatbotController.php';
     $chatCtrl = new ChatbotController($db);
     $chatCtrl->handleRequest();
     exit;
-} else {
+} elseif ($page === 'register') {
+    require __DIR__ . '/../app/views/register.php';
+    exit;
+} elseif ($page === 'history') {
+    require __DIR__ . '/../app/controllers/HistoryController.php';
+    $historyCtrl = new HistoryController($db);
+    $historyCtrl->handleRequest();
+    exit;
+} else { // default login
     require __DIR__ . '/../app/views/login.php';
+    exit;
 }

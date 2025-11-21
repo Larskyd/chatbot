@@ -1,16 +1,24 @@
 <?php include __DIR__ . '/header.php'; ?>
 
 <div class="container">
-    <h1>Logg inn / Registrer</h1>
 
+    <!-- Flash-melding for feil hvis bruker ikke er logget inn -->
+    <?php if (!empty($_SESSION['flash_error'])): ?>
+        <div style="color:red;"><?php echo htmlspecialchars($_SESSION['flash_error']); ?></div>
+        <?php unset($_SESSION['flash_error']); ?>
+    <?php endif; ?>
+
+    <!-- Melding for vellykket innlogging -->
     <?php if (!empty($_GET['loggedin'])): ?>
         <p style="color:green;">Du er logget inn.</p>
     <?php endif; ?>
 
-    <?php if (!empty($_GET['saved'])): ?>
-        <p style="color:green;">Bruker registrert.</p>
+    <!-- Melding for vellykket utlogging -->
+    <?php if (!empty($_GET['loggedout'])): ?>
+        <p style="color:green;">Du har nå logget ut.</p>
     <?php endif; ?>
 
+    <!-- Vis feil ved innlogging hvis noen -->
     <?php if (!empty($errors) && is_array($errors)): ?>
         <ul style="color:red;">
             <?php foreach ($errors as $e): ?>
@@ -32,20 +40,8 @@
 
             <button type="submit" class="btn">Logg inn</button>
         </form>
-
-        <!-- Register form -->
-        <form method="post" action="<?php echo htmlspecialchars(BASE_URL . '/?page=login'); ?>">
-            <input type="hidden" name="action" value="register">
-            <h2>Registrer</h2>
-            <label for="reg_email">E-post</label><br>
-            <input id="reg_email" name="email" type="email" required><br><br>
-
-            <label for="reg_password">Passord</label><br>
-            <input id="reg_password" name="password" type="password" required><br><br>
-
-            <button type="submit" class="btn">Registrer</button>
-        </form>
     </div>
+
 </div>
 
 <?php include __DIR__ . '/footer.php'; ?>

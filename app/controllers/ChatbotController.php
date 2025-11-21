@@ -7,11 +7,31 @@ class ChatbotController
     protected RecipeModel $recipeModel;
     protected QueryLogModel $logModel;
 
-    
+
     public function __construct($db)
     {
         $this->recipeModel = new RecipeModel($db);
-        $this->logModel = new QueryLogModel($db); 
+        $this->logModel = new QueryLogModel($db);
+    }
+
+    /**
+     * Sørg for at session er startet.
+     */
+    private function ensureSessionStarted(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+    }
+
+    /**
+     * Helperfunksjon
+     * Hent ID for nåværende bruker fra session.
+     */
+    private function getCurrentUserId(): ?int
+    {
+        $this->ensureSessionStarted();
+        return isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
     }
 
     /**
@@ -19,7 +39,17 @@ class ChatbotController
      */
     public function handleRequest(): void
     {
-        // defaults
+        $this->ensureSessionStarted();
+
+        // Auth-guard: redirect to login hvis ikke innlogget
+        $userId = $this->getCurrentUserId();
+        if ($userId === null) {
+            // sett flash-melding og redirect til login
+            $_SESSION['flash_error'] = 'Du må være logget inn for å se denne siden.';
+            header('Location: ' . (defined('BASE_URL') ? BASE_URL : '') . '/?page=login');
+            exit;
+        }
+
         $allCategories = [];
         $recipesByArea = [];
         $area = '';
@@ -34,9 +64,7 @@ class ChatbotController
                 if ($area !== '') {
                     $recipesByArea = $this->recipeModel->getRecipesByArea($area) ?? [];
 
-                    // logg søket — juster userId hvis du har autentisering
-                    $userId = $_SESSION['user_id'] ?? null;
-                    $responseText = json_encode(array_map(fn($r)=>($r['title'] ?? ''), $recipesByArea), JSON_UNESCAPED_UNICODE);
+                    $responseText = json_encode(array_map(fn($r) => ($r['title'] ?? ''), $recipesByArea), JSON_UNESCAPED_UNICODE);
                     $metadata = ['count' => count($recipesByArea)];
                     $this->logModel->insertLog($userId, $area, $responseText, $metadata);
                 }
