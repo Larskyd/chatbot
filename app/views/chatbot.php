@@ -1,4 +1,3 @@
-
 <?php include __DIR__ . '/header.php'; ?>
 
 <div class="container">
@@ -22,7 +21,7 @@
 
   <!-- Response text -->
   <?php if (!empty($response)): ?>
-    <div style="margin-top:16px;padding:10px;border:1px solid #eee;background:#fafafa;">
+    <div style="margin-top:16px;padding:10px;border:1px solid #eee;background:#fafafa;white-space:pre-wrap;">
       <strong>Bot:</strong> <?php echo htmlspecialchars($response); ?>
     </div>
   <?php endif; ?>
@@ -43,16 +42,33 @@
     </div>
   <?php endif; ?>
 
-  <!-- Recipes by area -->
+  <!-- Nummerert liste fra område -->
   <?php if (!empty($recipesByArea)): ?>
-    <h2 style="margin-top:16px">Oppskrifter fra "<?php echo htmlspecialchars($area ?? ''); ?>"</h2>
-    <div style="display:flex; flex-wrap:wrap; gap:20px; margin-top:10px;">
-      <?php foreach ($recipesByArea as $recipe): ?>
-        <div style="border:1px solid #ccc; padding:10px; width:200px;">
-          <img src="<?php echo htmlspecialchars($recipe['thumbnail']); ?>" alt="" style="width:100%;">
-          <h3><?php echo htmlspecialchars($recipe['name']); ?></h3>
-        </div>
+    <h2 style="margin-top:16px">Oppskrifter fra "<?php echo htmlspecialchars($_SESSION['last_recipes_area'] ?? $area ?? ''); ?>"</h2>
+    <ol style="margin-top:10px">
+      <?php foreach ($recipesByArea as $i => $recipe): ?>
+        <li style="margin-bottom:8px;">
+          <strong><?php echo htmlspecialchars($recipe['name'] ?? $recipe['title'] ?? 'Ukjent'); ?></strong>
+          <?php if (!empty($recipe['category'])): ?><br><small> <?php echo htmlspecialchars($recipe['category']); ?></small><?php endif; ?>
+        </li>
       <?php endforeach; ?>
+    </ol>
+    <p><em>Vil du se mer på et av dem? Svar f.eks. "vis 3" eller bare "3".</em></p>
+  <?php endif; ?>
+
+  <!-- Valgt oppskrift -->
+  <?php if (!empty($selectedRecipe)): ?>
+    <div style="border:1px solid #ccc; padding:12px; margin-top:12px;">
+      <h2><?php echo htmlspecialchars($selectedRecipe['name'] ?? $selectedRecipe['title'] ?? ''); ?></h2>
+      <?php if (!empty($selectedRecipe['thumbnail'])): ?>
+        <img src="<?php echo htmlspecialchars($selectedRecipe['thumbnail']); ?>" alt="" style="width:200px;">
+      <?php endif; ?>
+      <?php if (!empty($selectedRecipe['category'])): ?><p><strong>Kategori:</strong> <?php echo htmlspecialchars($selectedRecipe['category']); ?></p><?php endif; ?>
+      <?php if (!empty($selectedRecipe['area'])): ?><p><strong>Område:</strong> <?php echo htmlspecialchars($selectedRecipe['area']); ?></p><?php endif; ?>
+      <?php if (!empty($selectedRecipe['instructions'])): ?>
+        <h4>Instruksjoner</h4>
+        <p><?php echo nl2br(htmlspecialchars($selectedRecipe['instructions'])); ?></p>
+      <?php endif; ?>
     </div>
   <?php endif; ?>
 
