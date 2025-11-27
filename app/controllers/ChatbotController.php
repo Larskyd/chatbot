@@ -41,12 +41,7 @@ class ChatbotController
             $this->handleChat();
             return;
         }
-
-        $allCategories = [];
-        $recipesByArea = [];
-        $randomMeal = null;
-        $area = '';
-
+        
         include __DIR__ . '/../views/chatbot.php';
     }
 
@@ -213,7 +208,8 @@ class ChatbotController
     private function processArea(string $query): array
     {
         preg_match('/\b(?:fra|from|område|area)\b\s*:?[\s]*([\p{L}\s\-]+)/iu', $query, $m);
-        $area = isset($m[1]) ? trim($m[1]) : '';
+        $rawArea = isset($m[1]) ? trim($m[1]) : '';
+        $area = $this->recipeModel->normalizeArea($rawArea) ?? $rawArea;
         $recipes = $this->recipeModel->getRecipesByArea($area) ?? [];
 
         $normalized = array_map(function($r) {

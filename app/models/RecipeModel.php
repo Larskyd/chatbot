@@ -128,4 +128,96 @@ class RecipeModel
             'instructions' => $m['strInstructions'] ?? null,
         ];
     }
+
+    /**
+     * Hent alle tilgjengelige "areas" fra API (cache i statisk variabel)
+     *
+     * @return string[] liste av area navn, eller [] ved feil
+     */
+    public function getAllAreas(): array
+    {
+        static $cache = null;
+        if ($cache !== null) return $cache;
+
+        $url = "https://www.themealdb.com/api/json/v1/1/list.php?a=list";
+        $data = $this->fetchJson($url);
+        if (empty($data['meals'])) {
+            $cache = [];
+            return $cache;
+        }
+        $cache = array_map(fn($m) => $m['strArea'] ?? null, $data['meals']);
+        return $cache;
+    }
+
+    /**
+     * Normaliser brukerinput til en gyldig area-verdi for APIet.
+     * Returnerer canonical area (f.eks. "Italian") eller null hvis ingen match.
+     *
+     * @param string $input
+     * @return string|null
+     */
+    public function normalizeArea(string $input): ?string
+    {
+        $s = trim(mb_strtolower($input, 'UTF-8'));
+        // Fjern eventuelle ledende ord som "fra", "from", "område", "area"
+        $s = preg_replace('/^(fra|from|område|area)\b[:\s]*/u', '', $s);
+
+        // Oversett til ASCII for enklere matching
+        $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT', $s) ?: $s;
+        $ascii = preg_replace('/[^a-z\s]/', '', strtolower($ascii));
+        $ascii = trim($ascii);
+
+        if ($ascii === '') return null;
+
+        // Hardkodet mapping for vanlige varianter/feilstavinger
+        $map = [
+            'italy' => 'Italian', 'italia' => 'Italian', 'italiensk' => 'Italian', 
+            'spain' => 'Spanish', 'spania' => 'Spanish', 'spansk' => 'Spanish',
+            'france' => 'French', 'fransk' => 'French', 'french' => 'French',
+            'norway' => 'Norwegian', 'norge' => 'Norwegian', 'norsk' => 'Norwegian',
+            'uk' => 'British', 'england' => 'British', 'britain' => 'British', 'britisk' => 'British',
+            'japan' => 'Japanese', 'japansk' => 'Japanese',
+            'china' => 'Chinese', 'kina' => 'Chinese', 'kinesisk' => 'Chinese',
+            'mexico' => 'Mexican', 'meksiko' => 'Mexican', 'mexikansk' => 'Mexican',
+            'india' => 'Indian', 'indisk' => 'Indian',
+            'greece' => 'Greek', 'gresk' => 'Greek',
+            'thailand' => 'Thai', 'thai' => 'Thai',
+            'morocco' => 'Moroccan', 'marokko' => 'Moroccan', 'marokkansk' => 'Moroccan',
+            'vietnam' => 'Vietnamese', 'vietnamesisk' => 'Vietnamese',
+            'cuba' => 'Cuban', 'kubansk' => 'Cuban',
+            'brazil' => 'Brazilian', 'brasiliansk' => 'Brazilian',
+            'jamaica' => 'Jamaican', 'jamaicansk' => 'Jamaican',
+            'russia' => 'Russian', 'russisk' => 'Russian',
+            'germany' => 'German', 'tyskland' => 'German', 'tysk' => 'German',
+        ];
+        if (isset($map[$ascii])) return $map[$ascii];
+
+        // Sjekk direkte mot listen av gyldige areas
+        $areas = $this->getAllAreas();
+        $normAreas = array_map(function($a){
+            $t = @iconv('UTF-8', 'ASCII//TRANSLIT', mb_strtolower((string)$a, 'UTF-8')) ?: mb_strtolower((string)$a, 'UTF-8');
+            return preg_replace('/[^a-z\s]/', '', $t);
+        }, $areas);
+
+        // Hvis det er en eksakt match med listen av gyldige areas
+        $idx = array_search($ascii, $normAreas, true);
+        if ($idx !== false && isset($areas[$idx])) return $areas[$idx];
+
+        // Enkel fuzzy (Levenshtein) søk etter nærmeste match
+        $best = null; $bestDist = PHP_INT_MAX;
+        foreach ($normAreas as $i => $na) {
+            $dist = levenshtein($ascii, $na);
+            if ($dist < $bestDist) {
+                $bestDist = $dist;
+                $best = $areas[$i] ?? null;
+            }
+        }
+        // Terskel for fuzzy matching (3 endringer)
+        if ($best !== null && $bestDist <= 3) {
+            return $best;
+        }
+
+        // Ingen match funnet
+        return null;
+    }
 }

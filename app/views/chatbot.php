@@ -55,20 +55,24 @@
   <?php endif; ?>
 
 
+  <?php
+  // Sett inputverdi: behold tidligere tekst bare hvis POST uten svar/feilmelding,
+  // ellers tøm feltet etter submit.
+  $inputValue = '';
+  if (!($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($responseMessage))) {
+      $inputValue = $_POST['q'] ?? '';
+  }
+  ?>
+
   <!-- Chatbot input -->
   <form method="post" style="margin-top:20px;">
     <label for="chat-q">Skriv spørsmål eller kommando (f.eks. "kategori", "tilfeldig", "fra Italy"):</label>
     <div style="display:flex;gap:.5rem;margin-top:.5rem;">
-      <input id="chat-q" name="q" type="text" value="<?php echo htmlspecialchars($_POST['q'] ?? ''); ?>"
+      <input id="chat-q" name="q" type="text" value="<?php echo htmlspecialchars($inputValue); ?>"
         placeholder="Hva vil du vite? (kategori / tilfeldig / fra Norge / historikk)" style="flex:1;padding:.5rem;">
       <button type="submit">Send</button>
     </div>
   </form>
-
-  <!-- Categories -->
-  <?php if (!empty($allCategories)): ?>
-    <p style="margin-top:12px"><strong>Kategorier:</strong> <?php echo implode(", ", array_map('htmlspecialchars', $allCategories)); ?></p>
-  <?php endif; ?>
 
   <!-- Search results fallback -->
   <?php if (!empty($searchResults)): ?>
