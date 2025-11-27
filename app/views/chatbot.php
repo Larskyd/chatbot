@@ -9,67 +9,65 @@
     <p class="page-greeting">Velkommen tilbake, <?php echo htmlspecialchars($currentUser); ?>!</p>
   <?php endif; ?>
 
-  <!-- Chat input -->
+  <!-- Response fra query -->
+  <?php
+  // forvent at controller setter: $responseType, $responseData, $responseMessage
+  if (!empty($responseMessage) || !empty($responseType)): ?>
+    <div style="margin-top:16px;padding:10px;border:1px solid #eee;background:#fafafa;">
+      <strong>Bot:</strong>
+      <div style="margin-top:8px;">
+        <?php if (($responseType ?? '') === 'cards' && !empty($responseData['items'])): ?>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <?php foreach ($responseData['items'] as $i => $item): 
+              $name = htmlspecialchars($item['name'] ?? '');
+              $thumb = htmlspecialchars($item['thumbnail'] ?? '');
+              ?>
+              <div style="width:140px;text-align:center;">
+                <?php if ($thumb): ?>
+                  <img src="<?php echo $thumb; ?>" alt="<?php echo $name; ?>" style="width:100%;height:90px;object-fit:cover;border-radius:4px;border:1px solid #ddd;">
+                <?php endif; ?>
+                <div style="font-size:.9rem;padding-top:6px;"><?php echo ($i+1) . '. ' . $name; ?></div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+          <p style="margin-top:8px;"><?php echo htmlspecialchars($responseMessage); ?></p>
+
+        <?php elseif (($responseType ?? '') === 'detail' && !empty($responseData)): 
+            $name = htmlspecialchars($responseData['name'] ?? '');
+            $thumb = htmlspecialchars($responseData['thumbnail'] ?? '');
+            $instr = nl2br(htmlspecialchars($responseData['instructions'] ?? ''));
+          ?>
+          <div style="display:flex;gap:12px;">
+            <?php if ($thumb): ?>
+              <div style="flex:0 0 180px;"><img src="<?php echo $thumb; ?>" alt="<?php echo $name; ?>" style="width:180px;height:120px;object-fit:cover;border:1px solid #ddd;border-radius:4px;"></div>
+            <?php endif; ?>
+            <div>
+              <h2 style="margin:0 0 6px 0;"><?php echo $name; ?></h2>
+              <div><?php echo $instr; ?></div>
+            </div>
+          </div>
+
+        <?php else: ?>
+          <div><?php echo nl2br(htmlspecialchars($responseMessage)); ?></div>
+        <?php endif; ?>
+      </div>
+    </div>
+  <?php endif; ?>
+
+
+  <!-- Chatbot input -->
   <form method="post" style="margin-top:20px;">
     <label for="chat-q">Skriv spørsmål eller kommando (f.eks. "kategori", "tilfeldig", "fra Italy"):</label>
     <div style="display:flex;gap:.5rem;margin-top:.5rem;">
       <input id="chat-q" name="q" type="text" value="<?php echo htmlspecialchars($_POST['q'] ?? ''); ?>"
-             placeholder="Hva vil du vite? (kategori / tilfeldig / fra Norge / historikk)" style="flex:1;padding:.5rem;">
+        placeholder="Hva vil du vite? (kategori / tilfeldig / fra Norge / historikk)" style="flex:1;padding:.5rem;">
       <button type="submit">Send</button>
     </div>
   </form>
 
-  <!-- Response text -->
-  <?php if (!empty($response)): ?>
-    <div style="margin-top:16px;padding:10px;border:1px solid #eee;background:#fafafa;white-space:pre-wrap;">
-      <strong>Bot:</strong> <?php echo htmlspecialchars($response); ?>
-    </div>
-  <?php endif; ?>
-
   <!-- Categories -->
   <?php if (!empty($allCategories)): ?>
     <p style="margin-top:12px"><strong>Kategorier:</strong> <?php echo implode(", ", array_map('htmlspecialchars', $allCategories)); ?></p>
-  <?php endif; ?>
-
-  <!-- Random meal -->
-  <?php if (!empty($randomMeal)): ?>
-    <div style="border:1px solid #ccc; padding:10px; width:300px; margin-top:12px;">
-      <h2><?php echo htmlspecialchars($randomMeal['name']); ?></h2>
-      <img src="<?php echo htmlspecialchars($randomMeal['thumbnail']); ?>" alt="" style="width:100%;">
-      <p><strong>Kategori:</strong> <?php echo htmlspecialchars($randomMeal['category']); ?></p>
-      <p><strong>Område:</strong> <?php echo htmlspecialchars($randomMeal['area']); ?></p>
-      <p><?php echo nl2br(htmlspecialchars($randomMeal['instructions'] ?? '')); ?></p>
-    </div>
-  <?php endif; ?>
-
-  <!-- Nummerert liste fra område -->
-  <?php if (!empty($recipesByArea)): ?>
-    <h2 style="margin-top:16px">Oppskrifter fra "<?php echo htmlspecialchars($_SESSION['last_recipes_area'] ?? $area ?? ''); ?>"</h2>
-    <ol style="margin-top:10px">
-      <?php foreach ($recipesByArea as $i => $recipe): ?>
-        <li style="margin-bottom:8px;">
-          <strong><?php echo htmlspecialchars($recipe['name'] ?? $recipe['title'] ?? 'Ukjent'); ?></strong>
-          <?php if (!empty($recipe['category'])): ?><br><small> <?php echo htmlspecialchars($recipe['category']); ?></small><?php endif; ?>
-        </li>
-      <?php endforeach; ?>
-    </ol>
-    <p><em>Vil du se mer på et av dem? Svar f.eks. "vis 3" eller bare "3".</em></p>
-  <?php endif; ?>
-
-  <!-- Valgt oppskrift -->
-  <?php if (!empty($selectedRecipe)): ?>
-    <div style="border:1px solid #ccc; padding:12px; margin-top:12px;">
-      <h2><?php echo htmlspecialchars($selectedRecipe['name'] ?? $selectedRecipe['title'] ?? ''); ?></h2>
-      <?php if (!empty($selectedRecipe['thumbnail'])): ?>
-        <img src="<?php echo htmlspecialchars($selectedRecipe['thumbnail']); ?>" alt="" style="width:200px;">
-      <?php endif; ?>
-      <?php if (!empty($selectedRecipe['category'])): ?><p><strong>Kategori:</strong> <?php echo htmlspecialchars($selectedRecipe['category']); ?></p><?php endif; ?>
-      <?php if (!empty($selectedRecipe['area'])): ?><p><strong>Område:</strong> <?php echo htmlspecialchars($selectedRecipe['area']); ?></p><?php endif; ?>
-      <?php if (!empty($selectedRecipe['instructions'])): ?>
-        <h4>Instruksjoner</h4>
-        <p><?php echo nl2br(htmlspecialchars($selectedRecipe['instructions'])); ?></p>
-      <?php endif; ?>
-    </div>
   <?php endif; ?>
 
   <!-- Search results fallback -->
@@ -81,6 +79,7 @@
       <?php endforeach; ?>
     </ul>
   <?php endif; ?>
+
 
 </div>
 

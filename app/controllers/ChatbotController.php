@@ -56,134 +56,229 @@ class ChatbotController
         $userId = $this->getCurrentUserId();
 
         $query = trim($_POST['q'] ?? '');
-        $response = '';
-        $allCategories = $randomMeal = $recipesByArea = $searchResults = [];
+        $responseType = 'text';
+        $responseData = null;
+        $responseMessage = '';
         $area = null;
-        $selectedRecipe = null;
 
         if ($query !== '') {
             $lower = mb_strtolower($query, 'UTF-8');
 
-            // Kategorier
             if ($this->matchesCategories($lower)) {
                 $res = $this->processCategories();
-                $allCategories = $res['allCategories'];
-                $response = $res['response'];
-            }
-            // Tilfeldig forslag
-            elseif ($this->matchesRandom($lower)) {
+            } elseif ($this->matchesRandom($lower)) {
                 $res = $this->processRandom();
-                $randomMeal = $res['randomMeal'];
-                $response = $res['response'];
-            }
-            // Område-søk
-            elseif ($this->isAreaQuery($query)) {
+            } elseif ($this->isAreaQuery($query)) {
                 $res = $this->processArea($query);
-                $area = $res['area'];
-                $recipesByArea = $res['recipes'];
-                $response = $res['response'];
-
-                // lagre siste liste i session
-                $_SESSION['last_recipes'] = array_values($recipesByArea);
-                $_SESSION['last_recipes_area'] = $area;
-            }
-            // Velg nummer fra sist listede resultater
-            elseif ($this->isSelectionQuery($query) && !empty($_SESSION['last_recipes'])) {
+                $area = $res['data']['area'] ?? null;
+            } elseif ($this->isSelectionQuery($query) && !empty($_SESSION['last_recipes'])) {
                 $res = $this->processSelection($query);
-                $selectedRecipe = $res['selectedRecipe'] ?? null;
-                $response = $res['response'] ?? '';
+            } elseif ($this->isDoneQuery($lower)) {
+                $res = $this->processDone();
             } else {
-                $response = 'Søker etter: ' . $query;
+                $res = [
+                    'type' => 'text',
+                    'data' => null,
+                    'message' => 'Fant ingenting for "' . $query . '". Prøv f.eks. "kategori", "tilfeldig" eller "fra Norge".'
+                ];
             }
 
-            // logg spørringen
+            // Normaliser resultat
+            $responseType = $res['type'] ?? 'text';
+            $responseData = $res['data'] ?? null;
+            $responseMessage = $res['message'] ?? '';
+
+            // Hvis cards (område) — lagre minimal liste i session for påfølgende selection
+            if ($responseType === 'cards' && !empty($responseData['items']) && is_array($responseData['items'])) {
+                $_SESSION['last_recipes'] = array_map(function($it){
+                    return [
+                        'id' => $it['id'] ?? null,
+                        'name' => $it['name'] ?? null,
+                        'thumbnail' => $it['thumbnail'] ?? null
+                    ];
+                }, $responseData['items']);
+                $_SESSION['last_recipes_area'] = $responseData['area'] ?? null;
+            }
+
+            // Logg spørringen
             if ($userId !== null && method_exists($this->logModel, 'insertLog')) {
-                $metadata = ['area' => $area ?? '', 'response' => $response];
+                $metadata = ['area' => $area ?? '', 'type' => $responseType];
                 $this->logModel->insertLog($userId, $query, json_encode($metadata, JSON_UNESCAPED_UNICODE));
             }
         }
 
+        // Gjør variablene tilgjengelige for view (view bruker $responseType, $responseData, $responseMessage)
         include __DIR__ . '/../views/chatbot.php';
     }
 
-    /* ---------- Extracted helpers ---------- */
+    /* ---------- Hjelpefunksjoner ---------- */
 
+    /**
+     * Sjekk om spørringen matcher kategorier
+     * 
+     * @param string $lower
+     * @return bool
+     */
     private function matchesCategories(string $lower): bool
     {
         return preg_match('/\b(kategori|kategorier|category|categories)\b/', $lower) === 1;
     }
 
+    /**
+     * Sjekk om spørringen matcher tilfeldig forslag
+     * 
+     * @param string $lower
+     * @return bool
+     */
     private function matchesRandom(string $lower): bool
     {
         return preg_match('/\b(tilfeldig|random|forslag)\b/', $lower) === 1;
     }
 
+    /**
+     * Sjekk om spørringen er et område-søk
+     * 
+     * @param string $query
+     * @return bool
+     */
     private function isAreaQuery(string $query): bool
     {
         return preg_match('/\b(?:fra|from|område|area)\b\s*:?[\s]*([\p{L}\s\-]+)/iu', $query) === 1;
     }
 
+    /**
+     * Sjekk om spørringen er et nummerert valg
+     * 
+     * @param string $query
+     * @return bool
+     */
     private function isSelectionQuery(string $query): bool
     {
-        return preg_match('/^\s*(?:vis|show|ja|ok|okei)?\s*#?\s*(\d+)\s*$/iu', $query) === 1;
+        return preg_match('/\d+/', $query) === 1;
     }
 
+    /**
+     * Sjekk om spørringen indikerer ferdig/spørsmål avsluttet
+     * 
+     * @param string $query
+     * @return bool
+     */
+    private function isDoneQuery(string $query): bool
+    {
+        return preg_match('/\b(ferdig|done|avslutt|exit|slutt|takk)\b/', mb_strtolower($query, 'UTF-8')) === 1;
+    }
+
+    /**
+     * Hent og prosesser kategorier
+     *
+     * @return array
+     */
     private function processCategories(): array
     {
         $cats = $this->recipeModel->getAllCategories() ?? [];
+        $data = ['items' => array_values($cats)];
+        $message = empty($cats) ? 'Ingen kategorier funnet.' : 'Tilgjengelige kategorier: ' . implode(', ', $cats);
+
         return [
-            'allCategories' => $cats,
-            'response' => 'Her er de tilgjengelige kategorier.'
+            'type' => 'list',
+            'data' => $data,
+            'message' => $message
         ];
     }
 
+    /**
+     * Hent og prosesser et tilfeldig måltid
+     *
+     * @return array
+     */
     private function processRandom(): array
     {
-        $rand = $this->recipeModel->getRandomMeal();
+        $meal = $this->recipeModel->getRandomMeal();
+        $data = $meal ? $meal : null;
+        $message = $meal ? ('Forslag: ' . ($meal['name'] ?? '')) : 'Fant ingen forslag akkurat nå.';
+
         return [
-            'randomMeal' => $rand,
-            'response' => 'Her er et forslag til en rett:'
+            'type' => 'detail',
+            'data' => $data,
+            'message' => $message
         ];
     }
 
+    /**
+     * Hent og prosesser område-søk
+     *
+     * @param string $query
+     * @return array
+     */
     private function processArea(string $query): array
     {
         preg_match('/\b(?:fra|from|område|area)\b\s*:?[\s]*([\p{L}\s\-]+)/iu', $query, $m);
         $area = isset($m[1]) ? trim($m[1]) : '';
         $recipes = $this->recipeModel->getRecipesByArea($area) ?? [];
 
-        if (empty($recipes)) {
-            $response = "Fant ingen retter fra " . htmlspecialchars($area) . ".";
-        } else {
-            $lines = [];
-            foreach ($recipes as $i => $r) {
-                $lines[] = ($i + 1) . '. ' . ($r['name'] ?? ($r['title'] ?? 'Ukjent'));
-                if ($i >= 9) break;
-            }
-            $response = "Her er noen retter fra {$area}:\n" . implode("\n", $lines) .
-                        "\nVil du se mer på en av dem? Svar f.eks. 'vis 3' eller bare '3'.";
-        }
+        $normalized = array_map(function($r) {
+            $r = (array)$r;
+            return [
+                'id' => $r['id'] ?? $r['idMeal'] ?? null,
+                'name' => $r['name'] ?? $r['strMeal'] ?? null,
+                'thumbnail' => $r['thumbnail'] ?? $r['strMealThumb'] ?? null,
+            ];
+        }, $recipes);
 
         return [
-            'area' => $area,
-            'recipes' => $recipes,
-            'response' => $response,
+            'type' => 'cards',
+            'data' => ['area' => $area, 'items' => array_values($normalized)],
+            'message' => empty($normalized) ? "Fant ingen retter fra {$area}." : "Her er noen retter fra {$area}:"
         ];
     }
 
+    /**
+     * Hent og prosesser nummerert valg fra område-søk
+     *
+     * @param string $query
+     * @return array
+     */
     private function processSelection(string $query): array
     {
-        preg_match('/^\s*(?:vis|show|ja|ok|okei)?\s*#?\s*(\d+)\s*$/iu', $query, $m);
-        $idx = (int)($m[1] ?? 0) - 1;
-        $saved = $_SESSION['last_recipes'] ?? [];
-
-        if (isset($saved[$idx])) {
-            $selected = $saved[$idx];
-            $response = "Her er detaljene for «" . ($selected['name'] ?? $selected['title'] ?? '') . "».";
-            return ['selectedRecipe' => $selected, 'response' => $response];
-        } else {
-            $response = "Ugyldig nummer. Velg et nummer mellom 1 og " . count($saved) . ".";
-            return ['response' => $response];
+        if (!preg_match('/(\d+)/', $query, $m)) {
+            return ['type'=>'text','data'=>null,'message'=>'Ingen gyldig nummer funnet.'];
         }
+        $idx = (int)$m[1] - 1;
+        $saved = $_SESSION['last_recipes'] ?? [];
+        if (!isset($saved[$idx])) {
+            return ['type'=>'text','data'=>null,'message'=>'Ugyldig nummer.'];
+        }
+        $entry = $saved[$idx];
+        $id = $entry['id'] ?? null;
+        $selected = $id ? $this->recipeModel->getRecipeById($id) : (array)$entry;
+
+        // normaliser felter
+        if (is_array($selected)) {
+            $selected['thumbnail'] = $selected['thumbnail'] ?? $selected['strMealThumb'] ?? null;
+            $selected['name'] = $selected['name'] ?? $selected['strMeal'] ?? null;
+            $selected['instructions'] = $selected['instructions'] ?? $selected['strInstructions'] ?? null;
+            $selected['category'] = $selected['category'] ?? $selected['strCategory'] ?? null;
+            $selected['area'] = $selected['area'] ?? $selected['strArea'] ?? null;
+        }
+
+        return [
+            'type' => 'detail',
+            'data' => $selected,
+            'message' => $selected['name'] ?? 'Detaljer'
+        ];
+    }
+
+    /**
+     * Prosesser ferdig/spørsmål avsluttet
+     *
+     * @return array
+     */
+    private function processDone(): array
+    {
+        return [
+            'type' => 'text',
+            'data' => null,
+            'message' => 'Versågod! Håper maten frister! Si ifra hvis du trenger mer hjelp.'
+        ];
     }
 }
