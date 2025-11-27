@@ -9,7 +9,8 @@ class Database
 
     /**
      * @param array $config Konfiguren fra app/config.php
-     *                      format: ['db' => ['host','dbname','user','pass','charset']]
+     * format: ['db' => ['host','dbname','user','pass','charset']]
+     * 
      * @throws \PDOException
      */
     public function __construct(array $config)
