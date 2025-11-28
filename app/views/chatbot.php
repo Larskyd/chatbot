@@ -69,7 +69,7 @@
     <label for="chat-q">Skriv spørsmål eller kommando (f.eks. "kategori", "tilfeldig", "fra Italy"):</label>
     <div style="display:flex;gap:.5rem;margin-top:.5rem;">
       <input id="chat-q" name="q" type="text" value="<?php echo htmlspecialchars($inputValue); ?>"
-        placeholder="Hva vil du vite? (kategori / tilfeldig / fra Norge / historikk)" style="flex:1;padding:.5rem;">
+        placeholder="Hva vil du vite? (kategori / tilfeldig / fra Norge)" style="flex:1;padding:.5rem;">
       <button type="submit">Send</button>
     </div>
   </form>

@@ -54,16 +54,51 @@ class RecipeModel
     /**
      * Hent alle kategorinavn.
      *
-     * @return string[] Array av kategorinavn, tom array ved feil eller ingen data.
+     * @param bool $detailed Hvis true returnerer hver kategori som array med keys: id, name, thumbnail, description
+     * @return array Array av strenger (standard) eller array av associative arrays hvis $detailed=true
      */
-    public function getAllCategories()
+    public function getAllCategories(bool $detailed = false): array
     {
         $url = "https://www.themealdb.com/api/json/v1/1/categories.php";
         $data = $this->fetchJson($url);
         if (empty($data['categories'])) return [];
+
+        // Returner bare navn
+        if (!$detailed) {
+            return array_map(function ($cat) {
+                return $cat['strCategory'];
+            }, $data['categories']);
+        }
+
+        // Returner detaljert liste: returner id, navn, thumbnail og beskrivelse
         return array_map(function ($cat) {
-            return $cat['strCategory'];
+            return [
+                'id' => $cat['idCategory'] ?? null,
+                'name' => $cat['strCategory'] ?? null,
+                'thumbnail' => $cat['strCategoryThumb'] ?? null,
+                'description' => $cat['strCategoryDescription'] ?? null,
+            ];
         }, $data['categories']);
+    }
+
+    /**
+     * Hent oppskrifter basert på kategori.
+     *
+     * @param string $category Navn på kategori (f.eks. "Seafood")
+     * @return array[] Array av oppskrifter med keys: id, name, thumbnail
+     */
+    public function filterByCategory(string $category): array
+    {
+        $url = "www.themealdb.com/api/json/v1/1/filter.php?c=" . urlencode($category);
+        $data = $this->fetchJson($url);
+        if (empty($data['meals'])) return [];
+        return array_map(function ($meal) {
+            return [
+                'id' => $meal['idMeal'] ?? null,
+                'name' => $meal['strMeal'] ?? null,
+                'thumbnail' => $meal['strMealThumb'] ?? null
+            ];
+        }, $data['meals']);
     }
 
     /**

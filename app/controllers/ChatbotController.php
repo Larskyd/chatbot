@@ -2,6 +2,22 @@
 require_once __DIR__ . '/../models/RecipeModel.php';
 require_once __DIR__ . '/../models/QueryLogModel.php';
 
+/**
+ * ChatbotController
+ * Håndterer chatbot-forespørsler og interaksjoner.
+ * 
+ * Funksjonalitet:
+ * - handleRequest(): Håndterer innkommende forespørsler
+ * - handleChat(): Behandler chat-spørringer
+ * 
+ * - Hjelpefunksjoner
+ * - processDone(): Behandler "ferdig"-kommandoen
+ * - processCategories(): Hent og prosesser kategorier
+ * - processRandom(): Hent og prosesser et tilfeldig måltid
+ * - processArea(): Hent og prosesser område-søk
+ * - processSelection(): Hent og prosesser valg av oppskrift
+ * 
+ */
 class ChatbotController
 {
     protected RecipeModel $recipeModel;
@@ -45,6 +61,9 @@ class ChatbotController
         include __DIR__ . '/../views/chatbot.php';
     }
 
+    /**
+     * Behandle chat-spørring
+     */
     public function handleChat()
     {
         $this->ensureSessionStarted();
@@ -67,7 +86,16 @@ class ChatbotController
                 $res = $this->processArea($query);
                 $area = $res['data']['area'] ?? null;
             } elseif ($this->isSelectionQuery($query) && !empty($_SESSION['last_recipes'])) {
-                $res = $this->processSelection($query);
+                // Hvis forrige liste var selve kategorilisten, velg en kategori.
+                // Hvis forrige liste var en liste med oppskrifter (area eller valgt kategori),
+                // vis valgt oppskrift.
+                $prevType = $_SESSION['last_list_type'] ?? '';
+                if ($prevType === 'categories') {
+                    $res = $this->processCategoriesSelection($query);
+                } else {
+                    // default: behandle som valg av oppskrift fra siste kortliste
+                    $res = $this->processSelection($query);
+                }
             } elseif ($this->isDoneQuery($lower)) {
                 $res = $this->processDone();
             } else {
@@ -78,12 +106,12 @@ class ChatbotController
                 ];
             }
 
-            // Normaliser resultat
+            // Normaliser resultat for å unngå udefinerte variabler i view
             $responseType = $res['type'] ?? 'text';
             $responseData = $res['data'] ?? null;
             $responseMessage = $res['message'] ?? '';
 
-            // Hvis cards (område) — lagre minimal liste i session for påfølgende selection
+            // Hvis cards (område eller kategori) — lagre minimal liste i session for påfølgende selection
             if ($responseType === 'cards' && !empty($responseData['items']) && is_array($responseData['items'])) {
                 $_SESSION['last_recipes'] = array_map(function($it){
                     return [
@@ -92,7 +120,15 @@ class ChatbotController
                         'thumbnail' => $it['thumbnail'] ?? null
                     ];
                 }, $responseData['items']);
+                // lagre kontekst: område / category / categories
                 $_SESSION['last_recipes_area'] = $responseData['area'] ?? null;
+                if (isset($responseData['area'])) {
+                    $_SESSION['last_list_type'] = 'area'; // oppskrifter fra område
+                } elseif (isset($responseData['category'])) {
+                    $_SESSION['last_list_type'] = 'recipes'; // oppskrifter fra valgt kategori
+                } else {
+                    $_SESSION['last_list_type'] = 'categories'; // liste over kategorier
+                }
             }
 
             // Logg spørringen
@@ -116,7 +152,7 @@ class ChatbotController
      */
     private function matchesCategories(string $lower): bool
     {
-        return preg_match('/\b(kategori|kategorier|category|categories)\b/', $lower) === 1;
+        return preg_match('/\b(kategori|kategorier|category|categories|kategoriene|type|typene|typer)\b/', $lower) === 1;
     }
 
     /**
@@ -164,27 +200,79 @@ class ChatbotController
     }
 
     /**
-     * Hent og prosesser kategorier
+     * Hent og prosesser kategorier 
      *
-     * @return array
+     * @return array (type = 'cards', data = items[], message)
      */
     private function processCategories(): array
     {
-        $cats = $this->recipeModel->getAllCategories() ?? [];
-        $data = ['items' => array_values($cats)];
-        $message = empty($cats) ? 'Ingen kategorier funnet.' : 'Tilgjengelige kategorier: ' . implode(', ', $cats);
+        // Ber om detaljert info fra modellen (true)
+        $cats = $this->recipeModel->getAllCategories(true) ?? [];
+
+        $normalized = array_map(function($c) {
+            $c = (array)$c;
+            return [
+                'id' => $c['id'] ?? null,
+                'name' => $c['name'] ?? $c['strCategory'] ?? null,
+                'thumbnail' => $c['thumbnail'] ?? $c['strCategoryThumb'] ?? null,
+                'description' => $c['description'] ?? $c['strCategoryDescription'] ?? null,
+            ];
+        }, $cats);
+
+        
+        return [
+            'type' => 'cards',
+            'data' => ['items' => array_values($normalized)],
+            'message' => empty($normalized) ? 'Ingen kategorier funnet.' : 'Her er de tilgjenglige karegoriene. Velg en kategori for å få retter fra den kategorien.'
+        ];
+    }
+
+    /**
+     * Hent og prosesser nummerert valg fra kategoriliste
+     *
+     * @param string $query
+     * @return array (type = 'cards', data = items[], message)
+     */
+    private function processCategoriesSelection(string $query): array
+    {
+        if (!preg_match('/(\d+)/', $query, $m)) {
+            return ['type' => 'text', 'data' => null, 'message' => 'Ingen gyldig nummer funnet.'];
+        }
+        $idx = (int)$m[1] - 1;
+        $saved = $_SESSION['last_recipes'] ?? [];
+        if (!isset($saved[$idx])) {
+            return ['type' => 'text', 'data' => null, 'message' => 'Ugyldig nummer.'];
+        }
+
+        $entry = $saved[$idx];
+        $categoryName = $entry['name'] ?? null;
+        if (empty($categoryName)) {
+            return ['type' => 'text', 'data' => null, 'message' => 'Kunne ikke finne kategorinavnet for valget.'];
+        }
+
+        // Hent oppskrifter i valgt kategori fra modellen
+        $recipes = $this->recipeModel->filterByCategory($categoryName) ?? [];
+
+        $normalized = array_map(function($r) {
+            $r = (array)$r;
+            return [
+                'id' => $r['id'] ?? $r['idMeal'] ?? null,
+                'name' => $r['name'] ?? $r['strMeal'] ?? null,
+                'thumbnail' => $r['thumbnail'] ?? $r['strMealThumb'] ?? null,
+            ];
+        }, $recipes);
 
         return [
-            'type' => 'list',
-            'data' => $data,
-            'message' => $message
+            'type' => 'cards',
+            'data' => ['category' => $categoryName, 'items' => array_values($normalized)],
+            'message' => empty($normalized) ? "Fant ingen retter i kategorien {$categoryName}." : "Her er retter i kategorien {$categoryName}:"
         ];
     }
 
     /**
      * Hent og prosesser et tilfeldig måltid
      *
-     * @return array
+     * @return array (type = 'detail', data, message)
      */
     private function processRandom(): array
     {
@@ -203,7 +291,7 @@ class ChatbotController
      * Hent og prosesser område-søk
      *
      * @param string $query
-     * @return array
+     * @return array (type = 'cards', data = items[], message)
      */
     private function processArea(string $query): array
     {
@@ -232,7 +320,7 @@ class ChatbotController
      * Hent og prosesser nummerert valg fra område-søk
      *
      * @param string $query
-     * @return array
+     * @return array (type = 'detail', data, message)
      */
     private function processSelection(string $query): array
     {
@@ -267,7 +355,7 @@ class ChatbotController
     /**
      * Prosesser ferdig/spørsmål avsluttet
      *
-     * @return array
+     * @return array (type = 'text', data = null, message)
      */
     private function processDone(): array
     {
