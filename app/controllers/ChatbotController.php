@@ -223,7 +223,7 @@ class ChatbotController
         return [
             'type' => 'cards',
             'data' => ['items' => array_values($normalized)],
-            'message' => empty($normalized) ? 'Ingen kategorier funnet.' : 'Her er de tilgjenglige karegoriene. Velg en kategori for å få retter fra den kategorien.'
+            'message' => empty($normalized) ? 'Ingen kategorier funnet.' : "Her er de tilgjenglige karegoriene: \nVelg en kategori for å få retter fra den kategorien."
         ];
     }
 
@@ -265,7 +265,7 @@ class ChatbotController
         return [
             'type' => 'cards',
             'data' => ['category' => $categoryName, 'items' => array_values($normalized)],
-            'message' => empty($normalized) ? "Fant ingen retter i kategorien {$categoryName}." : "Her er retter i kategorien {$categoryName}:"
+            'message' => empty($normalized) ? "Fant ingen retter i kategorien {$categoryName}." : "Her er retter i kategorien {$categoryName}: \nSkriv nummeret til en av rettene for å se detaljer."
         ];
     }
 
@@ -312,7 +312,9 @@ class ChatbotController
         return [
             'type' => 'cards',
             'data' => ['area' => $area, 'items' => array_values($normalized)],
-            'message' => empty($normalized) ? "Fant ingen retter fra {$area}." : "Her er noen retter fra {$area}:"
+            'message' => empty($normalized)
+                ? "Fant ingen retter fra {$area}."
+                : "Her er noen retter fra {$rawArea}:\nSkriv nummeret til en av rettene for å se detaljer."
         ];
     }
 

@@ -1,7 +1,9 @@
-html, body {
+html,
+body {
     height: 100%;
     margin: 0;
 }
+
 body {
     display: flex;
     flex-direction: column;
@@ -17,21 +19,30 @@ body {
     align-items: center;
     justify-content: center;
 }
+
 .header {
     display: flex;
     align-items: center;
-    justify-content: space-between; /* tittel venstre, lenker høyre */
-    background: #2a7ae2;
+    justify-content: space-between;
+    background: #004cb6;
     color: white;
     padding: 16px 20px;
 }
 
 /* tittel på venstre side */
 .tittel {
-    background: transparent; /* fjern grå boks */
+    background: transparent;
+    /* fjern grå boks */
     padding: 0;
     margin: 0;
+    color: #fff;
 }
+.tittel a {
+  color: inherit;           /* arver tekstfarge fra .tittel */
+  text-decoration: none;    /* fjern understrek */
+  cursor: pointer;
+}
+
 .tittel h1 {
     margin: 0;
     font-size: 1.8rem;
@@ -43,7 +54,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    align-items: flex-end; /* høyrestilte lenker */
+    align-items: flex-end;
+    /* høyrestilte lenker */
 }
 
 .right-links a {
@@ -52,8 +64,9 @@ body {
     padding: 6px 10px;
     border-radius: 4px;
 }
+
 .right-links a:hover {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .btn {
@@ -76,12 +89,326 @@ body {
     background: rgb(255, 255, 255);
     border: 1px solid #ddd;
     border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .footer {
     background: #eee;
-    text-align: center; 
+    text-align: center;
     padding: 20px;
-    margin-top: auto; 
+    margin-top: auto;
+}
+
+/* Chat UI layout */
+.chat-container {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+    max-width: 1100px;
+    margin: 24px auto;
+}
+
+:root {
+    --chat-height: 540px;
+    /* juster etter behov */
+}
+
+/* venstre panel (robot) */
+.bot-panel {
+    width: 420px;
+    height: var(--chat-height);
+    /* lås høyden så boksen ikke endrer størrelse */
+    background: #ffffff;
+    border: 1px solid #e6e6e6;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    /* unngå at innhold stikker utenfor */
+}
+
+.bot-avatar {
+    width: 100%;
+    height: 360px;
+    /* begrens avatarområdet */
+    overflow: hidden;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.bot-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+}
+
+.bot-name {
+    margin-top: 10px;
+    font-weight: 600;
+    color: #333;
+    font-size: 1rem;
+}
+
+/* høyre panel (chat) */
+.chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: var(--chat-height);
+    /* lås høyden så boksen ikke endrer størrelse */
+    background: #ffffff;
+    border: 1px solid #e6e6e6;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+/* messages area */
+.messages {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    /* scroll for hele messages-kolonnen hvis nødvendig */
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* bubble styles */
+/* Sett max-høyde og la kun boblen rulle internt når innholdet blir langt */
+.message .bubble {
+    max-width: 780px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    line-height: 1.4;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+
+    max-height: 300px;
+    /* juster høyden på innholdsboblen */
+    overflow-y: auto;
+    /* scroll kun boblen når teksten er lang */
+    -webkit-overflow-scrolling: touch;
+}
+
+.message.user {
+    justify-content: flex-end;
+}
+
+.message.user .bubble {
+    background: #2a7ae2;
+    color: #fff;
+    border-bottom-right-radius: 6px;
+    border-bottom-left-radius: 12px;
+}
+
+.message.bot {
+    justify-content: flex-start;
+}
+
+.message.bot .bubble {
+    background: #f4f6f8;
+    color: #222;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 12px;
+}
+
+/* cards inside bot bubble */
+.cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.card {
+    width: 140px;
+    background: #fff;
+    border: 1px solid #e6e6e6;
+    border-radius: 6px;
+    text-align: center;
+    padding: 6px;
+}
+
+.card-thumb {
+    width: 100%;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.card-title {
+    font-size: 0.9rem;
+    padding-top: 6px;
+}
+
+/* detail view */
+.detail {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.detail-thumb {
+    width: 180px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e6e6e6;
+}
+
+.detail-body h3 {
+    margin: 0 0 6px 0;
+}
+
+/* small note text below cards */
+.msg-note {
+    margin-top: 8px;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+/* input area */
+.chat-form {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.chat-form input[type="text"] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.chat-form .btn {
+    padding: 10px 16px;
+    border-radius: 6px;
+}
+
+/* Auth / login/register centering and styling */
+.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 120px); /* juster hvis header/footer er høyere */
+    padding: 24px;
+    box-sizing: border-box;
+    background: linear-gradient(180deg, rgba(0,76,182,0.02), rgba(0,0,0,0));
+}
+
+.auth-card {
+    width: 420px;
+    max-width: 96%;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
+    padding: 28px;
+    box-shadow: 0 6px 24px rgba(10, 20, 40, 0.06);
+}
+
+/* Reuse .login-container name — ensure spacing is consistent */
+.login-container {
+    box-sizing: border-box;
+}
+
+/* auth form controls */
+.auth-form h2 {
+    margin: 0 0 14px 0;
+    font-size: 1.25rem;
+    color: #222;
+}
+.auth-form label {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #333;
+}
+.auth-form input[type="email"],
+.auth-form input[type="password"],
+.auth-form input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    margin-top: 6px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+/* actions row */
+.auth-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.auth-actions .btn {
+    padding: 10px 18px;
+    background: #2a7ae2;
+    color: #fff;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+}
+
+.link-muted {
+    color: #2a7ae2;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.link-muted:hover {
+    text-decoration: underline;
+}
+
+/* flash and errors */
+.flash {
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+.flash-error { background: #fff4f4; color: #a12b2b; border: 1px solid #f1c0c0; }
+.flash-success { background: #f3fff6; color: #17663a; border: 1px solid #cfe9d6; }
+
+.errors {
+    margin: 0 0 12px 0;
+    padding-left: 18px;
+    color: #a12b2b;
+}
+
+/* responsive */
+@media (max-width: 900px) {
+    .chat-container {
+        flex-direction: column;
+        padding: 12px;
+    }
+
+    .bot-panel {
+        width: 100%;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .chat-panel {
+        min-height: 420px;
+    }
+}
+
+/* responsive: small screens */
+@media (max-width: 520px) {
+    .auth-card { padding: 18px; }
+    .auth-actions { flex-direction: column; align-items: stretch; }
+    .auth-actions .btn { width: 100%; }
+    .link-muted { text-align: center; display: block; margin-top: 6px; }
 }
