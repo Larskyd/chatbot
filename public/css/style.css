@@ -104,7 +104,8 @@ body {
     display: flex;
     gap: 20px;
     align-items: stretch;
-    max-width: 1100px;
+    /* øk max-width så begge paneler får plass ved desktop */
+    max-width: 1240px; /* 420 (left) + 780 (right) + gap */
     margin: 24px auto;
 }
 
@@ -154,11 +155,12 @@ body {
 
 /* høyre panel (chat) */
 .chat-panel {
-    flex: 1;
+    /* Fjern fleksibel vekst og sett fast bredde */
+    flex: 0 0 780px;     /* fixed width: 780px */
+    width: 780px;
     display: flex;
     flex-direction: column;
     height: var(--chat-height);
-    /* lås høyden så boksen ikke endrer størrelse */
     background: #ffffff;
     border: 1px solid #e6e6e6;
     border-radius: 8px;
@@ -386,22 +388,37 @@ body {
     color: #a12b2b;
 }
 
+/* History page tweaks to match chat UI */
+.history-item { cursor: pointer; }
+.history-head { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:6px; }
+.history-query { font-size:0.98rem; }
+.history-time { color:#888; font-size:0.85rem; margin-left:8px; white-space:nowrap; }
+.history-meta { color:#666; font-size:0.9rem; }
+
+.history-detail .full-response {
+  max-height: 260px;
+  overflow:auto;
+  padding:8px;
+  background:#fff;
+  border-radius:6px;
+  border:1px solid #eee;
+}
+
+/* make history bubbles a bit more compact */
+.message.bot.history-item .bubble { max-width:100%; padding:12px; }
+
+/* ensure messages area scroll behaves nicely for history */
+#history-messages { gap:12px; }
+
 /* responsive */
 @media (max-width: 900px) {
-    .chat-container {
-        flex-direction: column;
-        padding: 12px;
-    }
-
-    .bot-panel {
-        width: 100%;
-        display: flex;
-        gap: 12px;
-        align-items: center;
-    }
-
+    .chat-container { flex-direction: column; padding: 12px; max-width: 100%; }
+    .bot-panel { width: 100%; }
     .chat-panel {
-        min-height: 420px;
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+        height: var(--chat-height);
     }
 }
 
