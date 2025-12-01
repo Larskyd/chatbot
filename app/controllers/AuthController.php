@@ -13,18 +13,11 @@ class AuthController
     protected int $maxAttempts = 3;
     protected string $lockInterval = '+1 hour';
 
-    /**
-     * Constructor.
-     * @param UserModel $userModel
-     */
     public function __construct(UserModel $userModel)
     {
         $this->userModel = $userModel;
     }
 
-    /**
-     * Sørg for at session er startet.
-     */
     private function ensureSession(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -37,12 +30,26 @@ class AuthController
      *
      * @return array ['success'=>bool, 'errors'=>[]]
      */
-    public function register(string $email, string $password): array
+    public function register(string $email, string $password, string $name = ''): array
     {
         $this->ensureSession();
         $errors = [];
 
+        // Fallback: dersom kallestedet ikke sendte verdiene i forventet rekkefølge,
+        // les fra $_POST for å være robust mot forskjellige kall.
+        if ($name === '' && isset($_POST['name'])) {
+            $name = trim((string)$_POST['name']);
+        }
+        if (($email === '' || $password === '') && !empty($_POST)) {
+            $email = $email ?: trim((string)($_POST['email'] ?? ''));
+            $password = $password ?: trim((string)($_POST['password'] ?? ''));
+        }
+
+        $name = trim($name);
         $email = trim($email);
+        if ($name === '') {
+            $errors[] = 'Navn må fylles ut.';
+        }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Ugyldig e-postadresse.';
         }
@@ -59,15 +66,18 @@ class AuthController
         }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        $ok = $this->userModel->createUser($email, $hash);
+        $ok = $this->userModel->createUser($name, $email, $hash);
 
         if (!$ok) {
             $errors[] = 'Kunne ikke lagre bruker. Prøv igjen senere.';
+            return ['success' => false, 'errors' => $errors];
         }
 
-        // Setter session med epost og id
+        // hent ny bruker for id og name
+        $user = $this->userModel->findByEmail($email);
         $_SESSION['user_email'] = $email;
-        $_SESSION['user_id'] = $this->userModel->findByEmail($email)['id'];
+        $_SESSION['user_id'] = $user['id'] ?? null;
+        $_SESSION['user_name'] = $user['name'] ?? $name;
 
         return ['success' => $ok, 'errors' => $errors];
     }
@@ -116,8 +126,7 @@ class AuthController
         if (!password_verify($password, $user['password'])) {
             $attempts = $this->userModel->incrementFailedAttempts((int)$user['id']);
             if ($attempts >= $this->maxAttempts) {
-                $lockedUntil = date('Y-m-d H:i:s', time() + 3600); // +1 time
-                error_log('DEBUG: locking user ' . $user['id'] . ' until ' . $lockedUntil);
+                $lockedUntil = date('Y-m-d H:i:s', time() + 3600);
                 $this->userModel->lockUserUntil((int)$user['id'], $lockedUntil);
                 $errors[] = 'For mange mislykkede forsøk — kontoen er låst i 1 time.';
             } else {
@@ -131,6 +140,7 @@ class AuthController
         $this->userModel->resetFailedAttempts((int)$user['id']);
         $_SESSION['user_email'] = $user['email'] ?? $email;
         $_SESSION['user_id'] = $user['id'] ?? null;
+        $_SESSION['user_name'] = $user['name'] ?? null;
 
         return ['success' => true, 'errors' => []];
     }
@@ -141,7 +151,7 @@ class AuthController
     public function logout(): void
     {
         $this->ensureSession();
-        unset($_SESSION['user_email'], $_SESSION['user_id']);
+        unset($_SESSION['user_email'], $_SESSION['user_id'], $_SESSION['user_name']);
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
             $params = session_get_cookie_params();

@@ -21,7 +21,7 @@ class UserModel
      */
     public function findByEmail(string $email): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, email, password, failed_attempts, locked_until FROM users WHERE email = :e LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, name, email, password, failed_attempts, locked_until FROM users WHERE email = :e LIMIT 1');
         $stmt->execute([':e' => $email]);
         $row = $stmt->fetch();
         return $row ?: null;
@@ -30,15 +30,16 @@ class UserModel
     /**
      * Opprett ny bruker.
      *
+     * @param string $name
      * @param string $email
      * @param string $hashedPassword
      * @return bool
      */
-    public function createUser(string $email, string $hashedPassword): bool
+    public function createUser(string $name, string $email, string $hashedPassword): bool
     {
-        $stmt = $this->pdo->prepare('INSERT INTO users (email, password, created_at) VALUES (:e, :p, NOW())');
+        $stmt = $this->pdo->prepare('INSERT INTO users (name, email, password, created_at) VALUES (:name, :e, :p, NOW())');
         try {
-            return (bool)$stmt->execute([':e' => $email, ':p' => $hashedPassword]);
+            return (bool)$stmt->execute([':name' => $name, ':e' => $email, ':p' => $hashedPassword]);
         } catch (\PDOException $ex) {
             error_log('DB insert user error: ' . $ex->getMessage());
             return false;

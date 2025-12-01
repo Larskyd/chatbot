@@ -19,8 +19,8 @@
         <input type="hidden" name="action" value="register">
         <h2>Registrer</h2>
 
-        <label for="reg_name">Navn</label>
-        <input id="reg_name" name="name" type="text" required>
+        <label for="name">Navn</label>
+        <input id="name" name="name" type="text" required>
 
         <label for="reg_email">E-post</label>
         <input id="reg_email" name="email" type="email" required autofocus>

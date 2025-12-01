@@ -16,7 +16,7 @@
   <main class="chat-panel" role="main" aria-live="polite">
     <header class="chat-header">
       <h2>Chat med Kokebot</h2>
-      <?php $currentUser = $currentUser ?? $_SESSION['user_email'] ?? null; ?>
+      <?php $currentUser = $currentUser ?? $_SESSION['user_name'] ?? $_SESSION['user_email'] ?? null; ?>
       <?php if ($currentUser): ?>
         <div class="small">Velkommen tilbake, <?php echo htmlspecialchars($currentUser); ?>!</div>
       <?php endif; ?>
