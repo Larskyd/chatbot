@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Basic error mode (kan settes fra config)
+// Basic error mode 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -22,7 +22,7 @@ $vendorAutoload = __DIR__ . '/../vendor/autoload.php';
     require_once $baseApp . '/controllers/ChatbotController.php';
     require_once $baseApp . '/controllers/HistoryController.php';
 
-// load config (composer autoload may already do this)
+// load config hvis den ikke er lastet inn tidligere
 $config = $config ?? require $baseApp . '/config.php';
 
 // Create DB + models
@@ -35,11 +35,11 @@ try {
     exit;
 }
 
-// Instantiate commonly used models/controllers (dependency injection)
+// Auth controller + model (Dependency Injection)
 $userModel = new \UserModel($db);
 $auth = new \AuthController($userModel);
 
-// Allowlist for pages - sanitise input and avoid arbitrary file include
+// Enkel routing basert på "page" parameter
 $allowedPages = [
     'login' => true,
     'register' => true,
@@ -54,19 +54,19 @@ if (!isset($allowedPages[$page])) {
     $page = 'login';
 }
 
-// Helper: redirect to path within BASE_URL
+// Helper: redirect funksjon
 $redirect = function ($path) {
     header('Location: ' . BASE_URL . $path);
     exit;
 };
 
-// Handle logout early
+// Handle logout
 if ($page === 'logout') {
     $auth->logout();
     $redirect('/?page=login&loggedout=1');
 }
 
-// POST handling - keep PRG and small handlers
+// POST handling 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($method === 'POST') {
     if ($page === 'register') {
@@ -96,10 +96,9 @@ if ($method === 'POST') {
         }
     }
 
-    // If other POST endpoints needed later, add them here (use CSRF check!)
 }
 
-// GET / page routing (thin)
+// GET / page routing
 switch ($page) {
     case 'chatbot':
         require_once $baseApp . '/controllers/ChatbotController.php';

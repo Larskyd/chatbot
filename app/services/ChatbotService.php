@@ -11,10 +11,10 @@ class ChatbotService
     }
 
     /**
-     * Route a raw query to the right process method.
+     * Rute spørring til riktig prosessor basert på innhold.
      *
      * @param string $query
-     * @param array|null $saved Last saved items (from session) for selection handling
+     * @param array|null $saved Tidligere lagrede resultater for valg (f.eks. kategorier eller retter)
      * @return array ['type'=>'text|cards|detail','data'=>mixed,'message'=>string]
      */
     public function routeQuery(string $query, ?array $saved = null): array
@@ -67,7 +67,7 @@ class ChatbotService
 
 
     /**
-     * Process catergories request.
+     * Behandle kategorier-forespørsel.
      * 
      * @return array ['type'=>'cards','data'=>['items'=>[...]],'message'=>string]
      */
@@ -92,7 +92,7 @@ class ChatbotService
     }
 
     /**
-     * Process random meal request.
+     * Behandle tilfeldig rett-forespørsel.
      * 
      * @return array ['type'=>'detail','data'=>mixed,'message'=>string]
      */
@@ -104,7 +104,7 @@ class ChatbotService
     }
 
     /**
-     * Process area-based recipe request.
+     * Behandle område-baserte rett-forespørsel.
      * 
      * @param string $query
      * @return array ['type'=>'cards','data'=>['items'=>[...]],'message'=>string]
@@ -138,8 +138,8 @@ class ChatbotService
     }
 
     /**
-     * Process a numeric selection against a saved list.
-     * $saved is expected to be an array of items with at least 'id' or 'name'.
+     * Behandle numerisk valg mot en lagret liste.
+     * $saved forventes å være en liste med elementer som har minst 'id' eller 'name'.
      * 
      * @param string $query
      * @param array $saved
@@ -156,7 +156,7 @@ class ChatbotService
         }
 
         $entry = $saved[$idx];
-        // If entry has an id -> fetch full recipe
+        // Hvis oppføringen har en id -> hent full oppskrift
         $id = $entry['id'] ?? null;
         if ($id && method_exists($this->recipeModel, 'getRecipeById')) {
             $selected = $this->recipeModel->getRecipeById($id);
@@ -174,7 +174,7 @@ class ChatbotService
             ];
         }
 
-        // If entry has a name, try treating it as a category name and fetch recipes
+        // Hvis oppføringen har et navn, prøv å behandle det som et kategorinavn og hent oppskrifter
         $catName = $entry['name'] ?? null;
         if ($catName && method_exists($this->recipeModel, 'filterByCategory')) {
             $recipes = $this->recipeModel->filterByCategory($catName) ?? [];

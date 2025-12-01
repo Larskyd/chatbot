@@ -2,8 +2,7 @@
 class ResponseRenderer
 {
     /**
-     * Render a structured response to HTML (basic, safe).
-     * Use this from views if you want a single rendering surface.
+     * Render en chatbot-respons som HTML.
      */
     public static function render(array $res): string
     {
