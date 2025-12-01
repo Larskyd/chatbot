@@ -2,49 +2,63 @@
 
 <h2>Historikk</h2>
 
-<?php
-// Hjelpefunksjon for sikker escaping
-function e($value): string
-{
-    return htmlspecialchars((string)($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-}
-
-// Formatér metadata (JSON) for visning
-function format_metadata($meta): string
-{
-    if ($meta === null || $meta === '') {
-        return '';
-    }
-    $decoded = json_decode($meta, true);
-    if (json_last_error() === JSON_ERROR_NONE) {
-        $pretty = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        return nl2br(e($pretty));
-    }
-    return e($meta);
-}
-?>
-
 <?php if (empty($history)): ?>
     <p>Ingen tidligere samtaler funnet.</p>
 <?php else: ?>
-    <table border="1" cellpadding="6" cellspacing="0">
-        <tr>
-            <th>ID</th>
-            <th>Bruker ID</th>
-            <th>Tekst</th>
-            <th>Svar</th>
-            <th>Tidspunkt</th>
-        </tr>
-        <?php foreach ($history as $entry): ?>
+    <table class="history-table" style="width:100%;border-collapse:collapse;">
+        <thead>
             <tr>
-                <td><?php echo e($entry['id'] ?? ''); ?></td>
-                <td><?php echo e($entry['user_id'] ?? ''); ?></td>
-                <td><?php echo e($entry['query_text'] ?? ''); ?></td>
-                <td><?php echo e($entry['response_text'] ?? ''); ?></td>
-                <td><?php echo e($entry['created_at'] ?? ''); ?></td>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Tid</th>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Spørsmål</th>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Type</th>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Kort svar</th>
+            </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($history as $entry): ?>
+            <tr class="history-row" data-id="<?php echo htmlspecialchars($entry['id']); ?>" style="cursor:pointer;">
+                <td style="padding:8px;border-bottom:1px solid #f0f0f0;"><?php echo htmlspecialchars($entry['created_at'] ?? ''); ?></td>
+                <td style="padding:8px;border-bottom:1px solid #f0f0f0;"><?php echo htmlspecialchars($entry['query_text'] ?? ''); ?></td>
+                <td style="padding:8px;border-bottom:1px solid #f0f0f0;"><?php echo htmlspecialchars($entry['response_type'] ?? ''); ?></td>
+                <td style="padding:8px;border-bottom:1px solid #f0f0f0;"><?php echo htmlspecialchars($entry['response_summary'] ?? ''); ?></td>
+            </tr>
+            <tr class="history-detail" id="detail-<?php echo htmlspecialchars($entry['id']); ?>" style="display:none;">
+                <td colspan="4" style="padding:8px;border-bottom:1px solid #eee;background:#fafafa;">
+                    <div class="full-response" data-id="<?php echo htmlspecialchars($entry['id']); ?>">Laster...</div>
+                </td>
             </tr>
         <?php endforeach; ?>
+        </tbody>
     </table>
 <?php endif; ?>
 
 <?php include __DIR__ . '/footer.php'; ?>
+
+<script>
+document.addEventListener('click', function (e) {
+  const tr = e.target.closest('.history-row');
+  if (!tr) return;
+  const id = tr.getAttribute('data-id');
+  const detail = document.getElementById('detail-' + id);
+  if (!detail) return;
+  // toggle visibility
+  if (detail.style.display === 'none' || detail.style.display === '') {
+    // hent full detalj via AJAX (ny endpoint ikke nødvendig hvis controller kan levere; vi bruker existing getDetail via XHR)
+    fetch('?page=history_detail&id=' + encodeURIComponent(id))
+      .then(r => r.ok ? r.json() : Promise.reject('error'))
+      .then(data => {
+        const container = detail.querySelector('.full-response');
+        container.innerHTML = '<strong>Fullt svar:</strong><pre style="white-space:pre-wrap;">' + (data.response_text ? escapeHtml(data.response_text) : '') + '</pre>'
+                            + (data.metadata ? ('<details><summary>Metadata</summary><pre>' + escapeHtml(JSON.stringify(data.metadata, null, 2)) + '</pre></details>') : '');
+      })
+      .catch(()=> {
+        detail.querySelector('.full-response').textContent = 'Kunne ikke hente detalj.';
+      });
+    detail.style.display = 'table-row';
+  } else {
+    detail.style.display = 'none';
+  }
+}, false);
+
+function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+</script>

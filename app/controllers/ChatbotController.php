@@ -131,10 +131,23 @@ class ChatbotController
                 }
             }
 
-            // Logg spørringen
+            // Bygg en kort summary av svaret for historikk (f.eks. navn på retter eller tittel)
+            $responseSummary = '';
+            if ($responseType === 'cards' && !empty($responseData['items']) && is_array($responseData['items'])) {
+                $names = array_map(fn($it) => $it['name'] ?? '', array_slice($responseData['items'], 0, 5));
+                $responseSummary = implode(', ', array_filter($names));
+            } elseif ($responseType === 'detail' && !empty($responseData['name'])) {
+                $responseSummary = $responseData['name'];
+            } else {
+                $responseSummary = mb_substr(strip_tags((string)$responseMessage), 0, 240);
+            }
+
+            // Metadata struktur (hold det kort)
+            $metadata = ['area' => $area ?? '', 'type' => $responseType];
+
+            // Logg spørringen med summary og type
             if ($userId !== null && method_exists($this->logModel, 'insertLog')) {
-                $metadata = ['area' => $area ?? '', 'type' => $responseType];
-                $this->logModel->insertLog($userId, $query, json_encode($metadata, JSON_UNESCAPED_UNICODE));
+                $this->logModel->insertLog($userId, $query, (string)$responseMessage, $responseType, $responseSummary, $metadata);
             }
         }
 
