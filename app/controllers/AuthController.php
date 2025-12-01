@@ -147,6 +147,8 @@ class AuthController
 
     /**
      * Logg ut bruker.
+     * 
+     * @return void
      */
     public function logout(): void
     {

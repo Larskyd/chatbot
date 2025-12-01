@@ -98,6 +98,9 @@ class QueryLogModel
 
     /**
      * Hent full detalj (response_text + metadata) for en loggpost
+     * 
+     * @param int $id
+     * @return array|null
      */
     public function getDetail(int $id): ?array
     {
