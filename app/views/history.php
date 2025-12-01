@@ -1,64 +1,66 @@
 <?php include __DIR__ . '/header.php'; ?>
 
-<h2>Historikk</h2>
+<div class="container chat-container">
 
-<?php if (empty($history)): ?>
-    <p>Ingen tidligere samtaler funnet.</p>
-<?php else: ?>
-    <table class="history-table" style="width:100%;border-collapse:collapse;">
-        <thead>
-            <tr>
-                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Tid</th>
-                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Spørsmål</th>
-                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Type</th>
-                <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Kort svar</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($history as $entry): ?>
-            <tr class="history-row" data-id="<?php echo htmlspecialchars($entry['id']); ?>" style="cursor:pointer;">
-                <td style="padding:8px;border-bottom:1px solid #f0f0f0;"><?php echo htmlspecialchars($entry['created_at'] ?? ''); ?></td>
-                <td style="padding:8px;border-bottom:1px solid #f0f0f0;"><?php echo htmlspecialchars($entry['query_text'] ?? ''); ?></td>
-                <td style="padding:8px;border-bottom:1px solid #f0f0f0;"><?php echo htmlspecialchars($entry['response_type'] ?? ''); ?></td>
-                <td style="padding:8px;border-bottom:1px solid #f0f0f0;"><?php echo htmlspecialchars($entry['response_summary'] ?? ''); ?></td>
-            </tr>
-            <tr class="history-detail" id="detail-<?php echo htmlspecialchars($entry['id']); ?>" style="display:none;">
-                <td colspan="4" style="padding:8px;border-bottom:1px solid #eee;background:#fafafa;">
-                    <div class="full-response" data-id="<?php echo htmlspecialchars($entry['id']); ?>">Laster...</div>
-                </td>
-            </tr>
+  <aside class="bot-panel" aria-hidden="false">
+    <div class="bot-avatar">
+      <img src="<?php echo htmlspecialchars(BASE_URL); ?>/images/lamegkoke.png" alt="Kokebot" />
+    </div>
+    <div class="bot-name">
+      <h1>Kokebot</h1>
+      <p>Din samtalehistorikk med Kokebot.</p>
+    </div>
+  </aside>
+
+  <main class="chat-panel" role="main" aria-live="polite">
+    <header class="chat-header">
+      <h2>Historikk</h2>
+      <?php $currentUser = $currentUser ?? $_SESSION['user_name'] ?? $_SESSION['user_email'] ?? null; ?>
+      <?php if ($currentUser): ?>
+        <div class="small">Viser siste forespørsler for <?php echo htmlspecialchars($currentUser); ?></div>
+      <?php endif; ?>
+    </header>
+
+    <section id="history-messages" class="messages">
+      <?php if (empty($history)): ?>
+        <div class="message bot">
+          <div class="bubble">Ingen tidligere samtaler funnet.</div>
+        </div>
+      <?php else: ?>
+        <?php foreach ($history as $entry): 
+            $id = (int)($entry['id'] ?? 0);
+            $time = htmlspecialchars($entry['created_at'] ?? '');
+            $query = htmlspecialchars($entry['query_text'] ?? '');
+            $type = htmlspecialchars($entry['response_type'] ?? '');
+            $summary = htmlspecialchars($entry['response_summary'] ?? '');
+        ?>
+          <div class="history-row" data-id="<?php echo $id; ?>">
+            <div class="message bot history-item" role="button" tabindex="0" aria-expanded="false" aria-controls="detail-<?php echo $id; ?>">
+              <div class="bubble">
+                <div class="history-head">
+                  <strong class="history-query"><?php echo $query; ?></strong>
+                  <small class="history-time"><?php echo $time; ?></small>
+                </div>
+                <div class="history-meta">
+                  <span class="history-type"><?php echo $type ?: 'text'; ?></span>
+                  <?php if ($summary !== ''): ?>
+                    <span class="history-summary"> — <?php echo $summary; ?></span>
+                  <?php endif; ?>
+                </div>
+                <div id="detail-<?php echo $id; ?>" class="history-detail" style="display:none;margin-top:8px;">
+                  <div class="full-response">Laster...</div>
+                </div>
+              </div>
+            </div>
+          </div>
         <?php endforeach; ?>
-        </tbody>
-    </table>
-<?php endif; ?>
+      <?php endif; ?>
+    </section>
+
+    <div class="chat-footer" style="padding-top:10px;border-top:1px solid #f0f0f0;margin-top:8px;">
+      <a href="<?php echo htmlspecialchars(BASE_URL . '/?page=chatbot'); ?>" class="btn">Tilbake til chat</a>
+    </div>
+  </main>
+</div>
 
 <?php include __DIR__ . '/footer.php'; ?>
-
-<script>
-document.addEventListener('click', function (e) {
-  const tr = e.target.closest('.history-row');
-  if (!tr) return;
-  const id = tr.getAttribute('data-id');
-  const detail = document.getElementById('detail-' + id);
-  if (!detail) return;
-  // toggle visibility
-  if (detail.style.display === 'none' || detail.style.display === '') {
-    // hent full detalj via AJAX (ny endpoint ikke nødvendig hvis controller kan levere; vi bruker existing getDetail via XHR)
-    fetch('?page=history_detail&id=' + encodeURIComponent(id))
-      .then(r => r.ok ? r.json() : Promise.reject('error'))
-      .then(data => {
-        const container = detail.querySelector('.full-response');
-        container.innerHTML = '<strong>Fullt svar:</strong><pre style="white-space:pre-wrap;">' + (data.response_text ? escapeHtml(data.response_text) : '') + '</pre>'
-                            + (data.metadata ? ('<details><summary>Metadata</summary><pre>' + escapeHtml(JSON.stringify(data.metadata, null, 2)) + '</pre></details>') : '');
-      })
-      .catch(()=> {
-        detail.querySelector('.full-response').textContent = 'Kunne ikke hente detalj.';
-      });
-    detail.style.display = 'table-row';
-  } else {
-    detail.style.display = 'none';
-  }
-}, false);
-
-function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
-</script>
