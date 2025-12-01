@@ -4,7 +4,6 @@
 
   <aside class="bot-panel" aria-hidden="false">
     <div class="bot-avatar">
-      <!-- Legg bilde i public/images/lamegkoke.png -->
       <img src="<?php echo htmlspecialchars(BASE_URL); ?>/images/lamegkoke.png" alt="LamegKoke" />
     </div>
     <div class="bot-name">
@@ -32,7 +31,7 @@
         </div>
       <?php endif; ?>
 
-      <!-- Bot respons (bruk eksisterende struktur) -->
+      <!-- Bot respons -->
       <?php if (!empty($responseMessage) || !empty($responseType)): ?>
         <div class="message bot">
           <div class="bubble">
@@ -75,6 +74,7 @@
       <?php endif; ?>
     </section>
 
+    <!-- Chat input form -->
     <form id="chat-form" method="post" class="chat-form" action="">
       <label for="chat-q" class="sr-only">Skriv melding</label>
       <input id="chat-q" name="q" type="text" value="<?php echo htmlspecialchars($inputValue ?? ''); ?>"
@@ -87,6 +87,8 @@
 
 <?php include __DIR__ . '/footer.php'; ?>
 
+
+<!-- Enkel JS for scroll og fokus -->
 <script>
   (function() {
     const messages = document.getElementById('messages');

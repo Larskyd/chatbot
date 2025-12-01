@@ -1,54 +1,13 @@
 <?php
+require_once __DIR__ . '/../lib/HttpClient.php';
+
 class RecipeModel
 {
-    /**
-     * Hjelpefunksjon.
-     * 
-     * Hent JSON fra URL, prøv file_get_contents først, så cURL.
-     * Returnerer decoded array eller null ved feil.
-     * 
-     * @param string $url
-     * @param int $timeout
-     * @return array|null
-     */
-    private function fetchJson(string $url, int $timeout = 10): ?array
-    {
-        // Prøv file_get_contents med timeout context
-        $ctx = stream_context_create([
-            'http' => ['timeout' => $timeout, 'user_agent' => 'PHP/' . PHP_VERSION],
-            'https' => ['timeout' => $timeout, 'user_agent' => 'PHP/' . PHP_VERSION],
-        ]);
-        $json = @file_get_contents($url, false, $ctx);
-        if ($json === false) {
-            // fallback til cURL
-            if (!function_exists('curl_version')) {
-                error_log("fetchJson: unable to fetch {$url} - no cURL and file_get_contents failed");
-                return null;
-            }
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_TIMEOUT => $timeout,
-                CURLOPT_USERAGENT => 'PHP/' . PHP_VERSION,
-            ]);
-            $json = curl_exec($ch);
-            $errno = curl_errno($ch);
-            $err = curl_error($ch);
-            $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            if ($json === false || $errno || ($http >= 400 && $http !== 0)) {
-                error_log("fetchJson: cURL error fetching {$url} - err={$errno}, http={$http}, msg={$err}");
-                return null;
-            }
-        }
+    protected HttpClient $http;
 
-        $data = json_decode($json, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            error_log("fetchJson: json decode error for {$url}: " . json_last_error_msg());
-            return null;
-        }
-        return $data;
+    public function __construct(?HttpClient $http = null)
+    {
+        $this->http = $http ?? new HttpClient();
     }
 
     /**
@@ -60,7 +19,7 @@ class RecipeModel
     public function getAllCategories(bool $detailed = false): array
     {
         $url = "https://www.themealdb.com/api/json/v1/1/categories.php";
-        $data = $this->fetchJson($url);
+        $data = $this->http->fetchJson($url);
         if (empty($data['categories'])) return [];
 
         // Returner bare navn
@@ -89,8 +48,8 @@ class RecipeModel
      */
     public function filterByCategory(string $category): array
     {
-        $url = "www.themealdb.com/api/json/v1/1/filter.php?c=" . urlencode($category);
-        $data = $this->fetchJson($url);
+        $url = "https://www.themealdb.com/api/json/v1/1/filter.php?c=" . urlencode($category);
+        $data = $this->http->fetchJson($url);
         if (empty($data['meals'])) return [];
         return array_map(function ($meal) {
             return [
@@ -109,7 +68,7 @@ class RecipeModel
     public function getRandomMeal()
     {
         $url = "https://www.themealdb.com/api/json/v1/1/random.php";
-        $data = $this->fetchJson($url);
+        $data = $this->http->fetchJson($url);
         if (empty($data['meals'][0])) return null;
         $meal = $data['meals'][0];
         return [
@@ -130,7 +89,7 @@ class RecipeModel
     public function getRecipesByArea($area)
     {
         $url = "https://www.themealdb.com/api/json/v1/1/filter.php?a=" . urlencode($area);
-        $data = $this->fetchJson($url);
+        $data = $this->http->fetchJson($url);
         if (empty($data['meals'])) return [];
         return array_map(function ($meal) {
             return [
@@ -151,7 +110,7 @@ class RecipeModel
     {
         $id = urlencode((string)$id);
         $url = "https://www.themealdb.com/api/json/v1/1/lookup.php?i={$id}";
-        $data = $this->fetchJson($url);
+        $data = $this->http->fetchJson($url);
         if (empty($data['meals'][0])) return null;
         $m = $data['meals'][0];
         return [
@@ -175,7 +134,7 @@ class RecipeModel
         if ($cache !== null) return $cache;
 
         $url = "https://www.themealdb.com/api/json/v1/1/list.php?a=list";
-        $data = $this->fetchJson($url);
+        $data = $this->http->fetchJson($url);
         if (empty($data['meals'])) {
             $cache = [];
             return $cache;
