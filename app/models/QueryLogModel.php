@@ -38,15 +38,18 @@ class QueryLogModel
      * @param array|null $metadata
      * @return int Inserted id
      */
-    public function insertLog($userId, string $queryText, ?string $responseText = null, ?array $metadata = null): int
+    public function insertLog(?int $userId, string $queryText, ?string $responseText = null, ?string $responseType = null, ?string $responseSummary = null, ?array $metadata = null): int
     {
-        $sql = "INSERT INTO query_log (user_id, query_text, response_text, metadata) VALUES (:user_id, :query_text, :response_text, :metadata)";
+        $sql = "INSERT INTO query_log (user_id, query_text, response_text, response_type, response_summary, metadata, created_at)
+                VALUES (:user_id, :query_text, :response_text, :response_type, :response_summary, :metadata, NOW())";
         $stmt = $this->pdo->prepare($sql);
         $jsonMeta = $metadata ? json_encode($metadata, JSON_UNESCAPED_UNICODE) : null;
         $stmt->execute([
             ':user_id' => $userId,
             ':query_text' => $queryText,
             ':response_text' => $responseText,
+            ':response_type' => $responseType,
+            ':response_summary' => $responseSummary,
             ':metadata' => $jsonMeta
         ]);
         return (int)$this->pdo->lastInsertId();
@@ -61,12 +64,9 @@ class QueryLogModel
      */
     public function getByUserId(?int $userId, int $limit = 100): array
     {
-        if ($userId === null) {
-            return [];
-        }
-
+        if ($userId === null) return [];
         try {
-            $sql = "SELECT id, user_id, query_text, response_text, metadata, created_at
+            $sql = "SELECT id, query_text, response_type, response_summary, created_at
                     FROM query_log
                     WHERE user_id = :user_id
                     ORDER BY created_at DESC
@@ -90,9 +90,20 @@ class QueryLogModel
      */
     public function getRecent(int $limit = 5): array
     {
-        $limit = (int) $limit;
-        $sql = "SELECT * FROM query_log ORDER BY created_at DESC LIMIT {$limit}";
+        $limit = (int)$limit;
+        $sql = "SELECT id, user_id, query_text, response_type, response_summary, created_at FROM query_log ORDER BY created_at DESC LIMIT {$limit}";
         $stmt = $this->pdo->query($sql);
         return $stmt ? $stmt->fetchAll() : [];
+    }
+
+    /**
+     * Hent full detalj (response_text + metadata) for en loggpost
+     */
+    public function getDetail(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare("SELECT id, user_id, query_text, response_text, response_type, response_summary, metadata, created_at FROM query_log WHERE id = :id LIMIT 1");
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
     }
 }
